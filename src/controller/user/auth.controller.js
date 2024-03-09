@@ -1,7 +1,7 @@
 const { PrismaClient, Role } = require("@prisma/client");
 const bcrypt = require("bcrypt");
 const dotenv = require("dotenv");
-const  jwt  = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 
 const prisma = new PrismaClient();
 
@@ -44,30 +44,25 @@ const register = async (req, res) => {
   }
 };
 
-
 const generateAccessToken = (name, email, role) => {
   try {
     const token = jwt.sign(
       { data: { name, email, role } },
       process.env.SECRET_KEY,
-      { expiresIn: '1h' }
+      { expiresIn: "1h" }
     );
 
     return {
-      message: 'Created access token successfully',
+      message: "Created access token successfully",
       token: token,
     };
   } catch (error) {
     console.error(error);
     return {
-      error: error.message || 'Internal server error',
+      error: error.message || "Internal server error",
     };
   }
 };
-
-module.exports = generateAccessToken;
-
-
 
 const login = async (req, res) => {
   try {
@@ -108,4 +103,4 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+module.exports = { register, login, generateAccessToken };

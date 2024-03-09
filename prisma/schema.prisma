@@ -11,17 +11,125 @@ datasource db {
 }
 
 enum Role {
-  USER
+  STUDENT
   ADMIN
+  COORDIONATOR
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String  
-  email     String   @unique
-  password  String   
-  createAt  DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  role      Role     
+  id                 String               @id @default(uuid())
+  name               String
+  email              String               @unique
+  password           String
+  createAt           DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  role               Role
+  is_locked          Boolean              @default(false)
+  default_pasword    String
+  Admin              Admin?
+  Conservation       Conversation[]
+  UserOnConservation UserOnConservation[]
+  Message            Message[]
+  Contribution       Contribution[]
+  Image              Image[]
+  Notification       Notification[]
+}
 
+model Admin {
+  id           String         @id @default(uuid())
+  userId       String         @unique
+  user         User           @relation(fields: [userId], references: [id])
+  faculty      Faculty[]
+  createAt     DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  AcademicYear AcademicYear[]
+}
+
+model Faculty {
+  id           String         @id @default(uuid())
+  name         String
+  Admin        Admin?         @relation(fields: [createBy], references: [id])
+  createBy     String?
+  createAt     DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Contribution Contribution[]
+}
+
+model Conversation {
+  id                 String               @id @default(uuid())
+  user               User[]
+  createAt           DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  UserOnConservation UserOnConservation[]
+  Message            Message[]
+}
+
+model UserOnConservation {
+  user           User         @relation(fields: [userId], references: [id])
+  userId         String
+  Conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+  createAt       DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@id([userId, conversationId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  text           String
+  sender         User         @relation(fields: [userId], references: [id]) // Reference the user who sent the message
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  userId         String
+}
+
+model AcademicYear {
+  id           String   @id @default(uuid())
+  title        String
+  closure_date DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  admin        Admin    @relation(fields: [adminId], references: [id])
+  adminId      String
+}
+
+model Contribution {
+  id           String        @id @default(uuid())
+  title        String
+  description  String
+  close_date   DateTime
+  is_disabled  Boolean       @default(false)
+  is_choosen   Boolean       @default(false)
+  faculty      Faculty       @relation(fields: [facultyId], references: [id])
+  facultyId    String
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  Image        Image[]
+  Notification Notification?
+}
+
+model Image {
+  id             String       @id @default(uuid())
+  name           String
+  path           String
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  contribution   Contribution @relation(fields: [contributionId], references: [id])
+  contributionId String
+}
+
+model Notification {
+  id             String       @id @default(uuid())
+  content        String
+  contribution   Contribution @relation(fields: [contributionId], references: [id])
+  contributionId String       @unique
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
 }
