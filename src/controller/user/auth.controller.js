@@ -15,9 +15,7 @@ const register = async (req, res) => {
 
     const passwordAfterHash = await bcrypt.hash(password, saltRounds);
 
-    console.log(passwordAfterHash);
-
-    let userRole = Role.USER;
+    let userRole;
 
     if (role === "Admin") {
       userRole = Role.ADMIN;
@@ -28,9 +26,16 @@ const register = async (req, res) => {
       email,
       password: passwordAfterHash,
       role: userRole,
+      default_pasword: passwordAfterHash,
     };
 
     const createUser = await prisma.user.create({ data: user });
+
+    const admin = {
+      userId: createUser.id, // Assuming userId is the foreign key in the Admin table
+    };
+
+    await prisma.admin.create({ data: admin });
 
     res.status(201).json({
       message: "User created successfully",
@@ -43,6 +48,7 @@ const register = async (req, res) => {
     });
   }
 };
+
 
 const generateAccessToken = (name, email, role) => {
   try {
