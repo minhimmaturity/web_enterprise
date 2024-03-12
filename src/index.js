@@ -7,6 +7,7 @@ const admin = require("./route/user/admin.route")
 const bodyParser = require("body-parser");
 const hbs = require('hbs');
 
+
 dotenv.config();
 
 const app = express();
@@ -24,7 +25,7 @@ const PORT = process.env.PORT;
 
 const main = async () => {
   try {
-    app.use("/auth", auth);
+    app.use("/auth", auth)
     app.use("/admin", admin);
     app.listen(PORT, () => {
       console.log(`Server is starting at http://${HOST}:${PORT}`);

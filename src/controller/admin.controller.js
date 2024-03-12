@@ -57,9 +57,22 @@ const createAccountForUser = async (req, res) => {
   }
 };
 
+const createAcademicYear = async(req, res) => {
+  const {closure_date, final_closure_date} = req.body
+
+  const academicYear = {
+    closure_date: closure_date,
+    final_closure_date: final_closure_date,
+    adminId: "fd4ffef9-2408-4a06-b22c-95a5c8d76ef6"
+  }
+
+  await prisma.academicYear.create({
+    data: academicYear
+  })
+}
 
 
-  module.exports = {createAccountForUser}
 
+  module.exports = {createAccountForUser, createAcademicYear}
 
   
