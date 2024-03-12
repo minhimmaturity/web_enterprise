@@ -14,3 +14,9 @@ npm start / yarn start
 
 Technologies in project:
 postgresql, redis, prisma, express
+
+
+route
+    /auth cho phần authentication and authorization
+    /auth/register cho phần create admin
+    /admin/registerForUser/ cho phần register account user

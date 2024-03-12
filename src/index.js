@@ -5,6 +5,7 @@ const { PrismaClient } = require("@prisma/client");
 const auth = require("./route/user/auth.route");
 const admin = require("./route/user/admin.route")
 const bodyParser = require("body-parser");
+const hbs = require('hbs');
 
 dotenv.config();
 
@@ -14,6 +15,9 @@ const prisma = new PrismaClient();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.set('view engine', 'hbs');
+hbs.registerHelper('helper_name', function (options) { return 'helper value'; });
+hbs.registerPartial('partial_name', 'partial value');
 
 const HOST = process.env.HOST;
 const PORT = process.env.PORT;

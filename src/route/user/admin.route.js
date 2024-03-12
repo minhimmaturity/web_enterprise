@@ -1,6 +1,6 @@
 const express = require("express");
 const { Router } = express;
-const {createAccountForUser} = require("./../../controller/user/admin.controller")
+const {createAccountForUser} = require("../../controller/admin.controller")
 
 const admin = express.Router()
 
