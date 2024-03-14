@@ -6,7 +6,6 @@ const {createAccountForUser, createAcademicYear,  createFaculty,
     viewFaculties,} = require("../../controller/admin.controller")
     const { checkRole1 } = require('../../middleware/checkRole');
     const { Role } = require("@prisma/client");
-const { createAccountForUser } = require("../../controller/admin.controller");
 
 const admin = express.Router();
 
