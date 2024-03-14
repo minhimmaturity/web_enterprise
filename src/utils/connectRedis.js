@@ -1,4 +1,4 @@
-const redis = require('redis');
+const redis = require("redis");
 const dotenv = require("dotenv");
 
 dotenv.config();
@@ -9,11 +9,15 @@ const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
 
 const redisClient = redis.createClient({
   password: REDIS_PASSWORD,
-    socket: {
-        host: REDIS_HOST,
-        port: REDIS_PORT
-    }
+  socket: {
+    host: REDIS_HOST,
+    port: REDIS_PORT,
+  },
 });
-redisClient.connect()
+try {
+  redisClient.connect();
+} catch (err) {
+  console.log(err.message);
+}
 
-module.exports = redisClient
+module.exports = redisClient;
