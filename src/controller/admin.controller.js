@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const randomstring = require("randomstring");
 const sendMailToUser = require("../utils/mailRegister");
 const hashPassword = require("../utils/hashPassword");
+const jwt = require("jsonwebtoken");
 
 const prisma = new PrismaClient();
 
@@ -74,18 +75,45 @@ const createAcademicYear = async(req, res) => {
 
 
 const createFaculty = async (req, res) => {
-  const { name, adminId } = req.body;
+  const { name} = req.body;
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
+  const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
+  console.log('Decoded Payload:', decodedPayload); 
+  
+  const user = await prisma.user.findUnique({
+      where: { email: decodedPayload.data.email },
+  });
+  
+  if (!user) {
+      return res.status(404).json({
+          message: "User not found",
+      });
+  }
+  
+  const admin = await prisma.admin.findUnique({
+      where: { userId: user.id }
+  });
+  
+  if (!admin) {
+      return res.status(404).json({
+          message: "Admin not found",
+      });
+  }
+  
+  const adminId = admin.id;
+  
+  
+  const facultyData = {
+    name:name,
+    createBy: adminId
+  }
+  console.log('Admin ID:', adminId); 
+  
   try {
     const faculty = await prisma.faculty.create({
-      data: { 
-        name,
-        admin: {
-          connect: {
-            id: adminId
-          }
-        }
-      },
+      data: facultyData
     });
 
     res.status(201).json({
