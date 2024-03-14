@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const { PrismaClient } = require("@prisma/client");
 const auth = require("./route/user/auth.route");
 const admin = require("./route/user/admin.route")
+const user  = require("./route/user/user.route")
 const bodyParser = require("body-parser");
 const hbs = require('hbs');
 
@@ -25,6 +26,7 @@ const PORT = process.env.PORT;
 
 const main = async () => {
   try {
+    app.use("/user", user)
     app.use("/auth", auth)
     app.use("/admin", admin);
     app.listen(PORT, () => {

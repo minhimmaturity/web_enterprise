@@ -58,4 +58,109 @@ const createAccountForUser = async (req, res) => {
   }
 };
 
-module.exports = { createAccountForUser };
+const createAcademicYear = async(req, res) => {
+  const {closure_date, final_closure_date} = req.body
+
+  const academicYear = {
+    closure_date: closure_date,
+    final_closure_date: final_closure_date,
+    adminId: "fd4ffef9-2408-4a06-b22c-95a5c8d76ef6"
+  }
+
+  await prisma.academicYear.create({
+    data: academicYear
+  })
+}
+
+
+const createFaculty = async (req, res) => {
+  const { name, adminId } = req.body;
+
+  try {
+    const faculty = await prisma.faculty.create({
+      data: { 
+        name,
+        admin: {
+          connect: {
+            id: adminId
+          }
+        }
+      },
+    });
+
+    res.status(201).json({
+      message: 'Faculty created successfully',
+      faculty,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: 'Internal Server Error',
+    });
+  }
+};
+
+const updateFaculty = async (req, res) => {
+  const { id, name } = req.body;
+
+  try {
+    const faculty = await prisma.faculty.update({
+      where: { id },
+      data: { name },
+    });
+
+    res.status(200).json({
+      message: 'Faculty updated successfully',
+      faculty,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: 'Internal Server Error',
+    });
+  }
+};
+
+const deleteFaculty = async (req, res) => {
+  const { id } = req.body;
+
+  try {
+    await prisma.faculty.delete({
+      where: { id },
+    });
+
+    res.status(200).json({
+      message: 'Faculty deleted successfully',
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: 'Internal Server Error',
+    });
+  }
+};
+
+const viewFaculties = async (req, res) => {
+  try {
+    const faculties = await prisma.faculty.findMany();
+
+    res.status(200).json({
+      message: 'Faculties retrieved successfully',
+      faculties,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: 'Internal Server Error',
+    });
+  }
+};
+
+module.exports = {
+  createAccountForUser,
+  createAcademicYear,
+  createFaculty,
+  updateFaculty,
+  deleteFaculty,
+  viewFaculties,
+};

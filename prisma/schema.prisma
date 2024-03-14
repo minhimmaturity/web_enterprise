@@ -35,6 +35,7 @@ model User {
   Contribution       Contribution[]
   Notification       Notification[]
   Comment            Comment?
+  
 }
 
 model Admin {

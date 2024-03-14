@@ -1,13 +1,24 @@
 const express = require("express");
 const { Router } = express;
-const { register, login } = require("../../controller/auth.controller");
+const { register, login, authToken, refreshAccessToken, editUserProfile } = require("../../controller/auth.controller");
 const { body, validationResult } = require("express-validator");
+const { publicPosts, privatePosts } = require("../../../database");
 
 const auth = Router();
 
 // Middleware to parse JSON in the request body
 auth.use(express.json());
+auth.get("/public", (req, res) => {
+  res.json(publicPosts);
+});
+// auth.put('/editProfile', editUserProfile);
 
+auth.get("/private", refreshAccessToken, (req, res) => {
+  res.json(privatePosts);
+});
+auth.get("/private1", authToken, (req, res) => {
+  res.json(privatePosts);
+});
 auth.post(
   "/register",
   [
@@ -53,11 +64,6 @@ auth.post(
       .notEmpty()
       .withMessage("Email is required")
       .isString(),
-    body("name")
-      .notEmpty()
-      .withMessage("Name is required")
-      .isString()
-      .withMessage("Name must be string"),
     body("password")
       .isString()
       .withMessage("Password must be string")
