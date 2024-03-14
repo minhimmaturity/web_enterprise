@@ -1,24 +1,22 @@
 const { PrismaClient, Role } = require("@prisma/client");
 const dotenv = require("dotenv");
 const randomstring = require("randomstring");
-const bcrypt = require("bcrypt")
-
+const sendMailToUser = require("../utils/mailRegister");
+const hashPassword = require("../utils/hashPassword");
 
 const prisma = new PrismaClient();
 
 dotenv.config();
 
-const saltRounds = 10;
-
 const createAccountForUser = async (req, res) => {
   try {
-    const { name, email, role } = req.body;
+    const { name, email, role, avatar } = req.body;
     const password = randomstring.generate();
-    const passwordAfterHash = await bcrypt.hash(password, saltRounds);
+    const passwordAfterHash = await hashPassword(password);
 
     const roleMapping = {
-      'Marketing Manager': Role.MANAGER,
-      'Marketing Coordinator': Role.COORDIONATOR,
+      "Marketing Manager": Role.MANAGER,
+      "Marketing Coordinator": Role.COORDIONATOR,
     };
 
     const existingUser = await prisma.user.findUnique({
@@ -26,6 +24,8 @@ const createAccountForUser = async (req, res) => {
         email,
       },
     });
+
+    await sendMailToUser(email, password, name);
 
     if (existingUser) {
       return res.status(400).json({
@@ -40,7 +40,8 @@ const createAccountForUser = async (req, res) => {
       email,
       password: passwordAfterHash,
       role: userRole,
-      default_pasword: passwordAfterHash
+      default_pasword: passwordAfterHash,
+      avatar: avatar,
     };
 
     const createUser = await prisma.user.create({ data: user });
@@ -57,22 +58,4 @@ const createAccountForUser = async (req, res) => {
   }
 };
 
-const createAcademicYear = async(req, res) => {
-  const {closure_date, final_closure_date} = req.body
-
-  const academicYear = {
-    closure_date: closure_date,
-    final_closure_date: final_closure_date,
-    adminId: "fd4ffef9-2408-4a06-b22c-95a5c8d76ef6"
-  }
-
-  await prisma.academicYear.create({
-    data: academicYear
-  })
-}
-
-
-
-  module.exports = {createAccountForUser, createAcademicYear}
-
-  
+module.exports = { createAccountForUser };
