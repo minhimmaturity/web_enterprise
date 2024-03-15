@@ -1,7 +1,7 @@
 const { PrismaClient, Role } = require("@prisma/client");
 const dotenv = require("dotenv");
 const randomstring = require("randomstring");
-const sendMailToUser = require("../utils/mailRegister");
+const { sendMailToUser } = require("../utils/mail-service");
 const hashPassword = require("../utils/hashPassword");
 const jwt = require("jsonwebtoken");
 
@@ -59,71 +59,69 @@ const createAccountForUser = async (req, res) => {
   }
 };
 
-const createAcademicYear = async(req, res) => {
-  const {closure_date, final_closure_date} = req.body
+const createAcademicYear = async (req, res) => {
+  const { closure_date, final_closure_date } = req.body;
 
   const academicYear = {
     closure_date: closure_date,
     final_closure_date: final_closure_date,
-    adminId: "fd4ffef9-2408-4a06-b22c-95a5c8d76ef6"
-  }
+    adminId: "fd4ffef9-2408-4a06-b22c-95a5c8d76ef6",
+  };
 
   await prisma.academicYear.create({
-    data: academicYear
-  })
-}
-
+    data: academicYear,
+  });
+};
 
 const createFaculty = async (req, res) => {
-  const { name} = req.body;
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const { name } = req.body;
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
   const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
-  console.log('Decoded Payload:', decodedPayload); 
-  
+  console.log("Decoded Payload:", decodedPayload);
+
   const user = await prisma.user.findUnique({
-      where: { email: decodedPayload.data.email },
+    where: { email: decodedPayload.data.email },
   });
-  
+
   if (!user) {
-      return res.status(404).json({
-          message: "User not found",
-      });
+    return res.status(404).json({
+      message: "User not found",
+    });
   }
-  
+
   const admin = await prisma.admin.findUnique({
-      where: { userId: user.id }
+    where: { userId: user.id },
   });
-  
+
   if (!admin) {
-      return res.status(404).json({
-          message: "Admin not found",
-      });
+    return res.status(404).json({
+      message: "Admin not found",
+    });
   }
-  
+
   const adminId = admin.id;
-  
-  
+
   const facultyData = {
-    name:name,
-    createBy: adminId
-  }
-  console.log('Admin ID:', adminId); 
-  
+    name: name,
+    createBy: adminId,
+  };
+  console.log("Admin ID:", adminId);
+
   try {
     const faculty = await prisma.faculty.create({
-      data: facultyData
+      data: facultyData,
     });
 
     res.status(201).json({
-      message: 'Faculty created successfully',
+      message: "Faculty created successfully",
       faculty,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      message: 'Internal Server Error',
+      message: "Internal Server Error",
     });
   }
 };
@@ -138,13 +136,13 @@ const updateFaculty = async (req, res) => {
     });
 
     res.status(200).json({
-      message: 'Faculty updated successfully',
+      message: "Faculty updated successfully",
       faculty,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      message: 'Internal Server Error',
+      message: "Internal Server Error",
     });
   }
 };
@@ -158,12 +156,12 @@ const deleteFaculty = async (req, res) => {
     });
 
     res.status(200).json({
-      message: 'Faculty deleted successfully',
+      message: "Faculty deleted successfully",
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      message: 'Internal Server Error',
+      message: "Internal Server Error",
     });
   }
 };
@@ -173,14 +171,27 @@ const viewFaculties = async (req, res) => {
     const faculties = await prisma.faculty.findMany();
 
     res.status(200).json({
-      message: 'Faculties retrieved successfully',
+      message: "Faculties retrieved successfully",
       faculties,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      message: 'Internal Server Error',
+      message: "Internal Server Error",
     });
+  }
+};
+
+const viewAllAcademicYear = async (req, res) => {
+  try {
+    const academicYears = await prisma.academicYear.findMany();
+
+    res.status(200).json({
+      message: "Academic Years retrieved successfully",
+      academicYears: academicYears,
+    });
+  } catch (error) {
+    console.log(error.message);
   }
 };
 
@@ -191,4 +202,5 @@ module.exports = {
   updateFaculty,
   deleteFaculty,
   viewFaculties,
+  viewAllAcademicYear,
 };
