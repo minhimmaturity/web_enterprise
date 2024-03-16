@@ -60,29 +60,152 @@ const createAccountForUser = async (req, res) => {
 };
 
 const createAcademicYear = async (req, res) => {
-  const { closure_date, final_closure_date } = req.body;
+  try {
+    const { closure_date, final_closure_date } = req.body;
 
-  const academicYear = {
-    closure_date: closure_date,
-    final_closure_date: final_closure_date,
-    adminId: "fd4ffef9-2408-4a06-b22c-95a5c8d76ef6",
-  };
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
 
-  await prisma.academicYear.create({
-    data: academicYear,
-  });
+    const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
+    const user = await prisma.user.findUnique({
+      where: { email: decodedPayload.data.email },
+    });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    const admin = await prisma.admin.findUnique({
+      where: { userId: user.id },
+    });
+    if (!admin) {
+      return res.status(404).json({
+        message: "Admin not found",
+      });
+    }
+
+    const academicYear = {
+      closure_date,
+      final_closure_date,
+      adminId: admin.id, // Associate the academic year with the admin
+    };
+
+    await prisma.academicYear.create({
+      data: academicYear,
+    });
+
+    res.status(201).json({
+      message: "Academic year created successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 };
 
+const updateAcademicYear = async (req, res) => {
+  const { id, closure_date, final_closure_date } = req.body;
+
+  try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
+    const user = await prisma.user.findUnique({
+      where: { email: decodedPayload.data.email },
+    });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    const admin = await prisma.admin.findUnique({
+      where: { userId: user.id },
+    });
+    if (!admin) {
+      return res.status(404).json({
+        message: "Admin not found",
+      });
+    }
+    const academicYear = await prisma.academicYear.update({
+      where: { id },
+      data: { closure_date, final_closure_date },
+    });
+
+    res.status(200).json({
+      message: "Academic year updated successfully",
+      academicYear,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const deleteAcademicYear = async (req, res) => {
+  const { id } = req.body;
+
+  try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
+    const user = await prisma.user.findUnique({
+      where: { email: decodedPayload.data.email },
+    });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    const admin = await prisma.admin.findUnique({
+      where: { userId: user.id },
+    });
+    if (!admin) {
+      return res.status(404).json({
+        message: "Admin not found",
+      });
+    }
+    await prisma.academicYear.delete({
+      where: { id },
+    });
+
+    res.status(200).json({
+      message: "Academic year deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const viewAcademicYears = async (req, res) => {
+  try {
+    const academicYears = await prisma.academicYear.findMany();
+
+    res.status(200).json({
+      message: "Academic years retrieved successfully",
+      academicYears,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+//FACULTY CRUD
 const createFaculty = async (req, res) => {
   const { name } = req.body;
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
-  console.log("Decoded Payload:", decodedPayload);
-
   const user = await prisma.user.findUnique({
-    where: { email: decodedPayload.data.email },
+    where: { email: req.decodedPayload.data.email },
   });
 
   if (!user) {
@@ -182,13 +305,29 @@ const viewFaculties = async (req, res) => {
   }
 };
 
-const viewAllAcademicYear = async (req, res) => {
+const viewAllAccount = async (req, res) => {
   try {
-    const academicYears = await prisma.academicYear.findMany();
+    const limit = 10;
+    let offset = 0;
+    let allAcademicYears = [];
+
+    while (true) {
+      const academicYears = await prisma.user.findMany({
+        skip: offset, // bỏ qua bao nhiêu bản ghi
+        take: limit, // lấy bao nhiêu bản ghi
+      });
+
+      if (academicYears.length === 0) {
+        // No more documents left to fetch
+        break;
+      }
+
+      allAcademicYears.push(academicYears);
+      offset += limit; 
+    }
 
     res.status(200).json({
-      message: "Academic Years retrieved successfully",
-      academicYears: academicYears,
+      account: allAcademicYears,
     });
   } catch (error) {
     console.log(error.message);
@@ -202,5 +341,8 @@ module.exports = {
   updateFaculty,
   deleteFaculty,
   viewFaculties,
-  viewAllAcademicYear,
+  updateAcademicYear,
+  deleteAcademicYear,
+  viewAcademicYears,
+  viewAllAccount,
 };
