@@ -76,8 +76,8 @@ const createAcademicYear = async (req, res) => {
   try {
     const { closure_date, final_closure_date } = req.body;
 
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
 
     const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
     const user = await prisma.user.findUnique({
@@ -123,8 +123,8 @@ const updateAcademicYear = async (req, res) => {
   const { id, closure_date, final_closure_date } = req.body;
 
   try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
 
     const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
     const user = await prisma.user.findUnique({
@@ -164,8 +164,8 @@ const deleteAcademicYear = async (req, res) => {
   const { id } = req.body;
 
   try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
 
     const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
     const user = await prisma.user.findUnique({
@@ -182,7 +182,7 @@ const deleteAcademicYear = async (req, res) => {
     if (!admin) {
       return res.status(404).json({
         message: "Admin not found",
-      }); 
+      });
     }
     await prisma.academicYear.delete({
       where: { id },
@@ -217,20 +217,20 @@ const viewAcademicYears = async (req, res) => {
 
 //FACULTY CRUD
 const createFaculty = async (req, res) => {
-  const { name} = req.body;
+  const { name } = req.body;
   // const authHeader = req.headers['authorization'];
   // const token = authHeader && authHeader.split(' ')[1];
 
   // const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
-  // console.log('Decoded Payload:', decodedPayload); 
-  
+  // console.log('Decoded Payload:', decodedPayload);
+
   // const user = await prisma.user.findUnique({
   //     where: { email: decodedPayload.data.email },
   // });
   const user = await prisma.user.findUnique({
     where: { email: req.decodedPayload.data.email },
-});
-  
+  });
+
   if (!user) {
     return res.status(404).json({
       message: "User not found",
@@ -328,13 +328,29 @@ const viewFaculties = async (req, res) => {
   }
 };
 
-const viewAllAcademicYear = async (req, res) => {
+const viewAllAccount = async (req, res) => {
   try {
-    const academicYears = await prisma.academicYear.findMany();
+    const limit = 10;
+    let offset = 0;
+    let allAcademicYears = [];
+
+    while (true) {
+      const academicYears = await prisma.user.findMany({
+        skip: offset, // bỏ qua bao nhiêu bản ghi
+        take: limit, // lấy bao nhiêu bản ghi
+      });
+
+      if (academicYears.length === 0) {
+        // No more documents left to fetch
+        break;
+      }
+
+      allAcademicYears.push(academicYears);
+      offset += limit; 
+    }
 
     res.status(200).json({
-      message: "Academic Years retrieved successfully",
-      academicYears: academicYears,
+      account: allAcademicYears,
     });
   } catch (error) {
     console.log(error.message);
@@ -351,4 +367,5 @@ module.exports = {
   updateAcademicYear,
   deleteAcademicYear,
   viewAcademicYears,
+  viewAllAccount,
 };

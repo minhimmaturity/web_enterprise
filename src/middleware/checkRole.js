@@ -1,13 +1,7 @@
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Role } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const Role = {
-  STUDENT: 'STUDENT',
-  ADMIN: 'ADMIN',
-  COORDINATOR: 'COORDINATOR',
-  MANAGER: 'MANAGER',
-};
 
 const authMiddleware = (allowedRoles) => async (req, res, next) => {
   try {
@@ -35,4 +29,4 @@ const authMiddleware = (allowedRoles) => async (req, res, next) => {
   }
 };
 
-module.exports = { authMiddleware, Role };
+module.exports = { authMiddleware };

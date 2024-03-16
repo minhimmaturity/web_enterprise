@@ -8,10 +8,12 @@ const {createAccountForUser,
     viewFaculties,
     updateAcademicYear,
     deleteAcademicYear,
+    viewAllAccount,
     viewAcademicYears} = require("../../controller/admin.controller")
     const { authenticateToken } = require('../../middleware/authenticateToken');
 
-const {authMiddleware, Role} = require("../../middleware/checkRole");
+const {authMiddleware} = require("../../middleware/checkRole");
+const { Role } = require("@prisma/client");
 const admin = express.Router();
 
 admin.use(express.json());
@@ -28,5 +30,6 @@ admin.post("/createFaculty", authMiddleware([Role.ADMIN]), createFaculty)
 admin.put("/updateFaculty/:facultyId", authMiddleware([Role.ADMIN]),  updateFaculty);
 admin.delete("/deleteFaculty/:facultyId", authMiddleware([Role.ADMIN]), deleteFaculty);
 admin.get("/viewFaculties", authMiddleware([Role.ADMIN]), viewFaculties);
+admin.get("/viewAllAcademicYear", authMiddleware([Role.STUDENT]), viewAllAccount)
 
 module.exports = admin;
