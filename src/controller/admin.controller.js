@@ -58,20 +58,7 @@ const createAccountForUser = async (req, res) => {
     });
   }
 };
-//ACADEMIC YEAR CRUD
-// const createAcademicYear = async(req, res) => {
-//   const {closure_date, final_closure_date} = req.body
 
-//   const academicYear = {
-//     closure_date: closure_date,
-//     final_closure_date: final_closure_date,
-//     adminId: "fd4ffef9-2408-4a06-b22c-95a5c8d76ef6"
-//   }
-
-//   await prisma.academicYear.create({
-//     data: academicYear
-//   })
-// }
 const createAcademicYear = async (req, res) => {
   try {
     const { closure_date, final_closure_date } = req.body;
@@ -96,12 +83,11 @@ const createAcademicYear = async (req, res) => {
         message: "Admin not found",
       });
     }
-    const adminId = admin.id;
 
     const academicYear = {
       closure_date,
       final_closure_date,
-      adminId, // Associate the academic year with the admin
+      adminId: admin.id, // Associate the academic year with the admin
     };
 
     await prisma.academicYear.create({
@@ -218,15 +204,6 @@ const viewAcademicYears = async (req, res) => {
 //FACULTY CRUD
 const createFaculty = async (req, res) => {
   const { name } = req.body;
-  // const authHeader = req.headers['authorization'];
-  // const token = authHeader && authHeader.split(' ')[1];
-
-  // const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
-  // console.log('Decoded Payload:', decodedPayload);
-
-  // const user = await prisma.user.findUnique({
-  //     where: { email: decodedPayload.data.email },
-  // });
   const user = await prisma.user.findUnique({
     where: { email: req.decodedPayload.data.email },
   });

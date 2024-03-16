@@ -2,35 +2,19 @@ const { PrismaClient, Role } = require("@prisma/client");
 const bcrypt = require("bcrypt");
 const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
-// const redis = require('redis');
 
-const redisClient = require("../utils/connectRedis")
+const redisClient = require("../utils/connectRedis");
+const hashPassword = require("../utils/hashPassword");
 
 const prisma = new PrismaClient();
 
 dotenv.config();
 
-// const REDIS_HOST = process.env.REDIS_HOST;
-// const REDIS_PORT = process.env.REDIS_PORT;
-// const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
-
-// const redisClient = redis.createClient({
-//   password: REDIS_PASSWORD,
-//     socket: {
-//         host: REDIS_HOST,
-//         port: REDIS_PORT
-//     }
-// });
-// redisClient.connect()
-
-
-const saltRounds = 10;
-
 const register = async (req, res) => {
   try {
-    const { name, email, password, role, avatar, facultyId } = req.body;
+    const { name, email, password, role, avatar } = req.body;
 
-    const passwordAfterHash = await bcrypt.hash(password, saltRounds);
+    const passwordAfterHash = await hashPassword(password);
 
     let userRole;
 
@@ -44,7 +28,7 @@ const register = async (req, res) => {
       password: passwordAfterHash,
       role: userRole,
       default_pasword: passwordAfterHash,
-      avatar:avatar
+      avatar:avatar,
     };
 
     const createUser = await prisma.user.create({ data: user });
