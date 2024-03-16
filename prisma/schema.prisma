@@ -35,7 +35,8 @@ model User {
   Contribution       Contribution[]
   Notification       Notification[]
   Comment            Comment?
-  
+  FacultyId          String?               
+  Faculty            Faculty?              @relation(fields: [FacultyId], references: [id], onDelete: Cascade)
 }
 
 model Admin {
@@ -56,6 +57,7 @@ model Faculty {
   createAt     DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   Contribution Contribution[]
+  User         User[]
 }
 
 model Conversation {

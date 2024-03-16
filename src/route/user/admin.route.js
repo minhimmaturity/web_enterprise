@@ -10,7 +10,6 @@ const {createAccountForUser,
     deleteAcademicYear,
     viewAllAccount,
     viewAcademicYears} = require("../../controller/admin.controller")
-    const { authenticateToken } = require('../../middleware/authenticateToken');
 
 const {authMiddleware} = require("../../middleware/checkRole");
 const { Role } = require("@prisma/client");
