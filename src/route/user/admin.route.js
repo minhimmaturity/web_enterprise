@@ -29,6 +29,6 @@ admin.post("/createFaculty", authMiddleware([Role.ADMIN]), createFaculty)
 admin.put("/updateFaculty/:facultyId", authMiddleware([Role.ADMIN]),  updateFaculty);
 admin.delete("/deleteFaculty/:facultyId", authMiddleware([Role.ADMIN]), deleteFaculty);
 admin.get("/viewFaculties", authMiddleware([Role.ADMIN]), viewFaculties);
-admin.get("/viewAllAcademicYear", authMiddleware([Role.STUDENT]), viewAllAccount)
+admin.get("/viewAllAccount", authMiddleware([Role.ADMIN]), viewAllAccount)
 
 module.exports = admin;

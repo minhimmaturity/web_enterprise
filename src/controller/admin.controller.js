@@ -187,7 +187,17 @@ const deleteAcademicYear = async (req, res) => {
 
 const viewAcademicYears = async (req, res) => {
   try {
-    const academicYears = await prisma.academicYear.findMany();
+    const { sort } = req.query;
+
+    const queryOptions = {};
+
+    if (sort) {
+      queryOptions.orderBy = {
+        closure_date: sort === 'asc' ? 'asc' : 'desc',
+      };
+    }
+
+    const academicYears = await prisma.academicYear.findMany(queryOptions);
 
     res.status(200).json({
       message: "Academic years retrieved successfully",
@@ -291,7 +301,27 @@ const deleteFaculty = async (req, res) => {
 
 const viewFaculties = async (req, res) => {
   try {
-    const faculties = await prisma.faculty.findMany();
+    const { sort, name } = req.query;
+
+    const queryOptions = {};
+    // sample http://localhost:3000/admin/viewFaculties?name=IT
+    if (name) {
+      queryOptions.where = {
+        name: {
+          contains: name,
+          mode: 'insensitive', //support case-insensitive filtering
+        },
+      };
+    }
+
+    // sample http://localhost:3000/admin/viewFaculties?sort=asc
+    if (sort) {
+      queryOptions.orderBy = {
+        createAt: sort === 'asc' ? 'asc' : 'desc',
+      };
+    }
+
+    const faculties = await prisma.faculty.findMany(queryOptions);
 
     res.status(200).json({
       message: "Faculties retrieved successfully",
@@ -310,12 +340,43 @@ const viewAllAccount = async (req, res) => {
     const limit = 10;
     let offset = 0;
     let allAcademicYears = [];
-
+    const { name, email, role } = req.query;
+  
     while (true) {
-      const academicYears = await prisma.user.findMany({
+      const queryOptions = {
         skip: offset, // bỏ qua bao nhiêu bản ghi
-        take: limit, // lấy bao nhiêu bản ghi
-      });
+        take: limit,// lấy bao nhiêu bản ghi
+
+      };
+
+      if (name) {
+        queryOptions.where = {
+          name: {
+            contains: name,
+            mode: 'insensitive', //support case-insensitive filtering
+          },
+        };
+      }
+
+      if (email) {
+        queryOptions.where = {
+          email: {
+            contains: email,
+            mode: 'insensitive', //support case-insensitive filtering
+          },
+        };
+      }
+
+      //sort the list by role:ADMIN,STUDENT,..
+      if (role) {
+        queryOptions.where = {
+          role: {
+            equals: role,
+          },
+        };
+      }
+
+      const academicYears = await prisma.user.findMany(queryOptions)
 
       if (academicYears.length === 0) {
         // No more documents left to fetch
@@ -324,6 +385,7 @@ const viewAllAccount = async (req, res) => {
 
       allAcademicYears.push(academicYears);
       offset += limit; 
+      
     }
 
     res.status(200).json({
