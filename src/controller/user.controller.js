@@ -5,7 +5,6 @@ const redisClient = require("../utils/connectRedis");
 const hashPassword = require("../utils/hashPassword");
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
-const { STATUS_CODES } = require("http");
 const prisma = new PrismaClient();
 const { StatusCodes } = require("http-status-codes");
 

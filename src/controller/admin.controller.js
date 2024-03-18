@@ -12,13 +12,13 @@ dotenv.config();
 
 const createAccountForUser = async (req, res) => {
   try {
-    const { name, email, role, avatar } = req.body;
+    const { name, email, role, avatar, faculty } = req.body;
     const password = randomstring.generate();
     const passwordAfterHash = await hashPassword(password);
 
     const roleMapping = {
       "Marketing Manager": Role.MANAGER,
-      "Marketing Coordinator": Role.COORDIONATOR,
+      "Marketing Coordinator": Role.COORDINATOR,
     };
 
     const existingUser = await prisma.user.findUnique({
@@ -35,7 +35,12 @@ const createAccountForUser = async (req, res) => {
       });
     }
 
-    const userRole = roleMapping[role] || Role.STUDENT;
+    let userRole = Role.STUDENT; // Default role
+
+    // Check if the role is coordinator or student to determine whether to include faculty
+    if (role === "Marketing Coordinator" || role === "Student") {
+      userRole = roleMapping[role];
+    }
 
     const user = {
       name,
@@ -44,6 +49,8 @@ const createAccountForUser = async (req, res) => {
       role: userRole,
       default_pasword: passwordAfterHash,
       avatar: avatar,
+      // Include faculty if the user is coordinator or student
+      Faculty: (userRole === Role.COORDINATOR || userRole === Role.STUDENT) ? faculty : null,
     };
 
     const createUser = await prisma.user.create({ data: user });
@@ -59,6 +66,7 @@ const createAccountForUser = async (req, res) => {
     });
   }
 };
+
 
 const createAcademicYear = async (req, res) => {
   try {
