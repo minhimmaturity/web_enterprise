@@ -59,7 +59,7 @@ const generateAccessToken = async (name, email, role) => {
       { expiresIn: "3d" }
     );
 
-    await redisClient.setEx("token" + " " + email, 60, token);
+    await redisClient.setEx("token" + " " + email, 60 * 60 * 24 * 3, token);
 
     return token; // Return the token here
   } catch (error) {
