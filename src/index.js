@@ -17,7 +17,17 @@ const prisma = new PrismaClient();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors());
+app.enableCors({
+  origin: true, // Set it to true to allow all origins or provide a specific origin or an array of origins
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed HTTP methods
+  allowedHeaders: [
+    "Origin",
+    "X-Requested-With",
+    "Content-Type",
+    "Accept",
+    "Authorization",
+  ], // Allowed request headers
+});
 app.set("view engine", "hbs");
 hbs.registerHelper("helper_name", function (options) {
   return "helper value";
