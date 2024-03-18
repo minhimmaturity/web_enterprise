@@ -160,56 +160,62 @@ const resetPassword = async (req, res) => {
 
 const uploadContribution = async (req, res) => {
   try {
-    const { title, description, close_date, facultyName } = req.body;
-    const images = req.files["image"];
-    const documents = req.files["document"];
+    const {title, description} = req.body;
+    if (!title) {
+      throw new Error("Title is empty");
+    }
+    
+    if (!description) {
+      throw new Error("Description is empty");
+    }
+    
+    const images = req.files['image'];
+    const documents = req.files['document'];
 
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
+    if(!req.files['image']&&!req.files['document']) {
+      throw new Error("No file is chosen");
+    }
 
-    const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
-    const user = await prisma.user.findUnique({
-      where: { email: decodedPayload.data.email },
+    const currentTimestamp = new Date();
+
+    // Find the academic year ID by the current time
+    const academicYear = await prisma.academicYear.findFirst({
+      where: {
+        closure_date: { gte: currentTimestamp }, // Now should be less than or equal to clousedate
+      },
     });
+
+    if (!academicYear) {
+      throw new Error("No academic year found for the current timestamp");
+    }
+    
+    //auth
+    const user = await prisma.user.findUnique({
+      where: { email: req.decodedPayload.data.email },
+    });
+  
     if (!user) {
       throw new Error("User not found");
     }
 
     // Create array
-    const imageData = images.map((image) => {
-      return {
-        name: image.originalname,
-        path: image.path,
-      };
-    });
+    const imageData = images ? images.map(image => ({
+      name: image.originalname,
+      path: image.path,
+    })) : [];
 
-    const documentData = documents.map((document) => {
-      return {
-        name: document.originalname,
-        path: document.path,
-      };
-    });
-
-    //find faculty id from name
-    const faculty = await prisma.faculty.findFirst({
-      where: {
-        name: facultyName,
-      },
-    });
-
-    //check faculty exists
-    if (!faculty) {
-      throw new Error("Facalty not found");
-    }
+    const documentData = documents ? documents.map(document => ({
+      name: document.originalname,
+      path: document.path,
+    })) : [];
 
     const contribution = {
       title: title,
       description: description,
-      close_date: close_date,
-      facultyId: faculty.id,
+      AcademicYearId: academicYear.id,
       userId: user.id,
-      Documents: { createMany: { data: documentData } },
-      Image: { createMany: { data: imageData } },
+      Documents: { createMany: { data: documentData } }, 
+      Image: { createMany: { data: imageData } }
     };
 
     await prisma.contribution.create({
@@ -220,46 +226,70 @@ const uploadContribution = async (req, res) => {
       message: "Contribution created successfully",
     });
   } catch (error) {
+    
     //delete file if error
-    const images = req.files["image"];
-    const documents = req.files["document"];
-    const files = [...images, ...documents];
+    const images = req.files['image'];
+    const documents = req.files['document'];
+    const files=[]
+    if(!images &&!documents) {
+      files==[]
+    }
+    else if (!images){
+      files == [...documents];
+    }
+    else if(!documents){
+      files == [...images]
+    }
+    else{
+    files == [...images, ...documents];}
     for (index = 0, len = files.length; index < len; index++) {
-      console.log(files[index].path);
+      console.log(files[index].path)
       fs.unlinkSync(files[index].path);
     }
     console.error(error);
     res.status(StatusCodes.BAD_GATEWAY).json({
       message: error.message,
     });
-  }
-};
+  } 
+}
 
 const viewMyContributions = async (req, res) => {
   try {
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
-
-    const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
     const user = await prisma.user.findUnique({
-      where: { email: decodedPayload.data.email },
+      where: { email: req.decodedPayload.data.email },
     });
+  
     if (!user) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
 
-    const contributions = await prisma.contribution.findMany({
-      where: {
-        userId: user.id,
-      },
-    });
+    const limit = 10;
+    let offset = 0;
+    let allMyContributions = [];
+
+    while (true) {
+      const contributions = await prisma.contribution.findMany({
+        where: {
+          userId: user.id, 
+        },
+        skip: offset,
+        take: limit,
+      });
+
+      if (contributions.length === 0) {
+        break;
+      }
+
+      allMyContributions.push(contributions);
+      offset += limit; 
+    }
 
     res.status(StatusCodes.OK).json({
-      message: "Contributions retrieved successfully",
-      contributions,
+      contribution: allMyContributions
     });
+
   } catch (error) {
     console.error(error);
     res.status(StatusCodes.BAD_GATEWAY).json({
