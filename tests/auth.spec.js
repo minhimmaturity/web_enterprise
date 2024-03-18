@@ -1,7 +1,14 @@
 const { mockRequest, mockResponse } = require("jest-mock-req-res");
-const { login, register } = require("../src/controller/auth.controller"); // Import your login function
+const {
+  login,
+  register,
+  generateAccessToken,
+  generateRefreshToken,
+} = require("../src/controller/auth.controller"); // Import your login function
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
+
+const jwt = require("jsonwebtoken");
 
 describe("Login function", () => {
   test("Should return status 404 if user is not found", async () => {
@@ -67,6 +74,56 @@ describe("Login function", () => {
         refreshToken: expect.any(String),
       })
     );
+  });
+
+  // You can add more tests to cover edge cases or additional scenarios
+});
+
+describe("generateAccessToken function", () => {
+  test("Should return a valid JWT token", async () => {
+    // Mock user data
+    const name = "Test User";
+    const email = "test@example.com";
+    const role = "user";
+
+    // Mock JWT sign function
+    jwt.sign = jest.fn().mockReturnValue("mockedJWTToken");
+
+    // Mock Redis client and setEx function
+    const redisClient = {
+      setEx: jest.fn().mockResolvedValue("OK"),
+    };
+
+    // Mock process.env.SECRET_KEY
+    process.env.SECRET_KEY = "mockedSecretKey";
+
+    const token = await generateAccessToken(name, email, role);
+
+    // Assert that the function returns a non-empty string
+    expect(typeof token).toBe("string");
+    expect(token).toBeTruthy();
+  });
+
+  test("Should generate valid refresh token", async () => {
+    // Mock user data
+    const email = "test@example.com";
+
+    // Mock JWT sign function
+    jwt.sign = jest.fn().mockReturnValue("mockedJWTToken");
+
+    // Mock Redis client and setEx function
+    const redisClient = {
+      setEx: jest.fn().mockResolvedValue("OK"),
+    };
+
+    // Mock process.env.SECRET_KEY
+    process.env.REFRESH_SECRET_KEY = "mockedSecretKey";
+
+    const token = await generateRefreshToken(email);
+
+    // Assert that the function returns a non-empty string
+    expect(typeof token).toBe("string");
+    expect(token).toBeTruthy();
   });
 
   // You can add more tests to cover edge cases or additional scenarios

@@ -4,8 +4,10 @@ const { sendMailResetPassword } = require("../utils/mail-service");
 const redisClient = require("../utils/connectRedis");
 const hashPassword = require("../utils/hashPassword");
 const jwt = require("jsonwebtoken");
-const fs = require('fs')
+const fs = require("fs");
+const { STATUS_CODES } = require("http");
 const prisma = new PrismaClient();
+const { StatusCodes } = require("http-status-codes");
 
 const changePassword = async (req, res) => {
   try {
@@ -18,7 +20,7 @@ const changePassword = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
@@ -159,10 +161,10 @@ const resetPassword = async (req, res) => {
 
 const uploadContribution = async (req, res) => {
   try {
-    const {title, description, close_date, facultyName} = req.body;
-    const images = req.files['image'];
-    const documents = req.files['document'];
-    
+    const { title, description, close_date, facultyName } = req.body;
+    const images = req.files["image"];
+    const documents = req.files["document"];
+
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
 
@@ -175,14 +177,14 @@ const uploadContribution = async (req, res) => {
     }
 
     // Create array
-    const imageData = images.map(image => {
+    const imageData = images.map((image) => {
       return {
         name: image.originalname,
         path: image.path,
       };
     });
 
-    const documentData = documents.map(document => {
+    const documentData = documents.map((document) => {
       return {
         name: document.originalname,
         path: document.path,
@@ -193,8 +195,8 @@ const uploadContribution = async (req, res) => {
     const faculty = await prisma.faculty.findFirst({
       where: {
         name: facultyName,
-      }
-    })
+      },
+    });
 
     //check faculty exists
     if (!faculty) {
@@ -205,10 +207,10 @@ const uploadContribution = async (req, res) => {
       title: title,
       description: description,
       close_date: close_date,
-      facultyId: faculty.id, 
+      facultyId: faculty.id,
       userId: user.id,
-      Documents: { createMany: { data: documentData } }, 
-      Image: { createMany: { data: imageData } }
+      Documents: { createMany: { data: documentData } },
+      Image: { createMany: { data: imageData } },
     };
 
     await prisma.contribution.create({
@@ -219,21 +221,20 @@ const uploadContribution = async (req, res) => {
       message: "Contribution created successfully",
     });
   } catch (error) {
-    
     //delete file if error
-    const images = req.files['image'];
-    const documents = req.files['document'];
+    const images = req.files["image"];
+    const documents = req.files["document"];
     const files = [...images, ...documents];
     for (index = 0, len = files.length; index < len; index++) {
-      console.log(files[index].path)
+      console.log(files[index].path);
       fs.unlinkSync(files[index].path);
     }
     console.error(error);
     res.status(500).json({
       message: error.message,
     });
-  } 
-}
+  }
+};
 
 const viewMyContributions = async (req, res) => {
   try {
@@ -252,7 +253,7 @@ const viewMyContributions = async (req, res) => {
 
     const contributions = await prisma.contribution.findMany({
       where: {
-        userId: user.id
+        userId: user.id,
       },
     });
 
@@ -268,4 +269,11 @@ const viewMyContributions = async (req, res) => {
   }
 };
 
-module.exports = { editUserProfile, changePassword, sentOtp, resetPassword, uploadContribution,viewMyContributions };
+module.exports = {
+  editUserProfile,
+  changePassword,
+  sentOtp,
+  resetPassword,
+  uploadContribution,
+  viewMyContributions,
+};
