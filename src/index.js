@@ -19,9 +19,15 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: "http://example.com", // specify the allowed origins
-    methods: ["GET", "POST"], // specify the allowed HTTP methods
-    allowedHeaders: ["Content-Type", "Authorization"], // specify the allowed headers
+    origin: true, // Set it to true to allow all origins or provide a specific origin or an array of origins
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed HTTP methods
+    allowedHeaders: [
+      "Origin",
+      "X-Requested-With",
+      "Content-Type",
+      "Accept",
+      "Authorization",
+    ], // Allowed request headers
   })
 );
 app.set("view engine", "hbs");
