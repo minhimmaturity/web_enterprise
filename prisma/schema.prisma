@@ -35,8 +35,8 @@ model User {
   Contribution       Contribution[]
   Notification       Notification[]
   Comment            Comment?
-  FacultyId          String?               
-  Faculty            Faculty?              @relation(fields: [FacultyId], references: [id], onDelete: Cascade)
+  FacultyId          String?
+  Faculty            Faculty?             @relation(fields: [FacultyId], references: [id], onDelete: Cascade)
 }
 
 model Admin {
@@ -56,7 +56,6 @@ model Faculty {
   createBy     String
   createAt     DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  Contribution Contribution[]
   User         User[]
 }
 
@@ -92,33 +91,33 @@ model Message {
 }
 
 model AcademicYear {
-  id                 String   @id @default(uuid())
+  id                 String         @id @default(uuid())
   closure_date       DateTime
   final_closure_date DateTime
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  admin              Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  admin              Admin          @relation(fields: [adminId], references: [id], onDelete: Cascade)
   adminId            String
+  Contribution       Contribution[]
 }
 
 model Contribution {
-  id           String        @id @default(uuid())
-  title        String
-  description  String
-  close_date   DateTime
-  is_disabled  Boolean       @default(false)
-  is_choosen   Boolean       @default(false)
-  is_public    Boolean       @default(false)
-  faculty      Faculty       @relation(fields: [facultyId], references: [id])
-  facultyId    String
-  userId       String
-  user         User          @relation(fields: [userId], references: [id])
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  Image        Image[]
-  Documents    Documents[]
-  Notification Notification?
-  Comment      Comment[]
+  id             String        @id @default(uuid())
+  title          String
+  description    String
+  is_disabled    Boolean       @default(false)
+  is_choosen     Boolean       @default(false)
+  is_public      Boolean       @default(false)
+  AcademicYear   AcademicYear  @relation(fields: [AcademicYearId], references: [id], onDelete: Cascade)
+  AcademicYearId String
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  Image          Image[]
+  Documents      Documents[]
+  Notification   Notification?
+  Comment        Comment[]
 }
 
 model Image {
@@ -127,7 +126,7 @@ model Image {
   path           String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  contribution   Contribution @relation(fields: [contributionId], references: [id])
+  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
   contributionId String
 }
 
@@ -155,8 +154,8 @@ model Comment {
   content        String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  user           User         @relation(fields: [userId], references: [id])
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         String       @unique
-  contribution   Contribution @relation(fields: [contributionId], references: [id])
+  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
   contributionId String
 }

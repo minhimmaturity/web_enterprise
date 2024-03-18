@@ -2,7 +2,7 @@ const { PrismaClient, Role } = require("@prisma/client");
 const bcrypt = require("bcrypt");
 const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
-
+const { StatusCodes } = require("http-status-codes");
 const redisClient = require("../utils/connectRedis");
 const hashPassword = require("../utils/hashPassword");
 
@@ -39,13 +39,13 @@ const register = async (req, res) => {
 
     await prisma.admin.create({ data: admin });
 
-    res.status(201).json({
+    res.status(StatusCodes.OK).json({
       message: "User created successfully",
       user: createUser,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -90,7 +90,7 @@ const authToken = async (req, res, next) => {
   const token = req.header("x-auth-token");
 
   if (!token) {
-    return res.status(401).json({
+    return res.status(StatusCodes.NOT_FOUND).json({
       errors: [
         {
           msg: "Token not found",
@@ -180,7 +180,7 @@ const login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
@@ -197,14 +197,14 @@ const login = async (req, res) => {
     const refreshToken = await generateRefreshToken(user.email);
 
     // Send the tokens back to the client
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "Login successful",
       token: token,
       refreshToken: refreshToken,
     });
   } catch (error) {
     console.error("Error during login:", error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal server error",
     });
   }

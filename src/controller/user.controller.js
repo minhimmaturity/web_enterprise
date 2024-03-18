@@ -28,7 +28,7 @@ const changePassword = async (req, res) => {
     const validPassword = await bcrypt.compare(oldPassword, user.password);
 
     if (!validPassword) {
-      return res.status(400).json({
+      return res.status(StatusCodes.BAD_REQUEST).json({
         message: "Invalid old password",
       });
     }
@@ -44,13 +44,13 @@ const changePassword = async (req, res) => {
       },
     });
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "Password updated successfully",
       user: updatedUser,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -67,7 +67,7 @@ const editUserProfile = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
@@ -82,13 +82,13 @@ const editUserProfile = async (req, res) => {
       },
     });
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "User profile updated successfully",
       user: updatedUser,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -105,19 +105,19 @@ const sentOtp = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
 
     await sendMailResetPassword(email);
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "Password reset link sent successfully",
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -129,19 +129,19 @@ const resetPassword = async (req, res) => {
   const otpInRedis = await redisClient.get(key);
 
   if (!otpInRedis) {
-    return res.status(400).json({
+    return res.status(StatusCodes.BAD_REQUEST).json({
       message: "Invalid otp",
     });
   }
 
   if (otp !== otpInRedis) {
-    return res.status(400).json({
+    return res.status(StatusCodes.BAD_REQUEST).json({
       message: "Invalid otp",
     });
   }
 
   if (newPassword !== reNewPassword) {
-    return res.status(400).json({
+    return res.status(StatusCodes.BAD_REQUEST).json({
       message: "Passwords do not match",
     });
   }
@@ -153,7 +153,7 @@ const resetPassword = async (req, res) => {
     data: { password: password },
   });
 
-  res.status(200).json({
+  res.status(StatusCodes.OK).json({
     message: "Password updated successfully",
     user: updatedUser,
   });
@@ -217,7 +217,7 @@ const uploadContribution = async (req, res) => {
       data: contribution,
     });
 
-    res.status(201).json({
+    res.status(StatusCodes.OK).json({
       message: "Contribution created successfully",
     });
   } catch (error) {
@@ -230,7 +230,7 @@ const uploadContribution = async (req, res) => {
       fs.unlinkSync(files[index].path);
     }
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: error.message,
     });
   }
@@ -257,13 +257,13 @@ const viewMyContributions = async (req, res) => {
       },
     });
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "Contributions retrieved successfully",
       contributions,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }

@@ -4,6 +4,7 @@ const randomstring = require("randomstring");
 const { sendMailToUser } = require("../utils/mail-service");
 const hashPassword = require("../utils/hashPassword");
 const jwt = require("jsonwebtoken");
+const { StatusCodes } = require("http-status-codes");
 
 const prisma = new PrismaClient();
 
@@ -29,7 +30,7 @@ const createAccountForUser = async (req, res) => {
     await sendMailToUser(email, password, name);
 
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(StatusCodes.NOT_ACCEPTABLE).json({
         message: "User with this email already exists",
       });
     }
@@ -47,13 +48,13 @@ const createAccountForUser = async (req, res) => {
 
     const createUser = await prisma.user.create({ data: user });
 
-    res.status(201).json({
+    res.status(StatusCodes.OK).json({
       message: "User created successfully",
       user: createUser,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -71,7 +72,7 @@ const createAcademicYear = async (req, res) => {
       where: { email: decodedPayload.data.email },
     });
     if (!user) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
@@ -94,12 +95,12 @@ const createAcademicYear = async (req, res) => {
       data: academicYear,
     });
 
-    res.status(201).json({
+    res.status(StatusCodes.OK).json({
       message: "Academic year created successfully",
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -117,7 +118,7 @@ const updateAcademicYear = async (req, res) => {
       where: { email: decodedPayload.data.email },
     });
     if (!user) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
@@ -125,7 +126,7 @@ const updateAcademicYear = async (req, res) => {
       where: { userId: user.id },
     });
     if (!admin) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "Admin not found",
       });
     }
@@ -134,13 +135,13 @@ const updateAcademicYear = async (req, res) => {
       data: { closure_date, final_closure_date },
     });
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "Academic year updated successfully",
       academicYear,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -158,7 +159,7 @@ const deleteAcademicYear = async (req, res) => {
       where: { email: decodedPayload.data.email },
     });
     if (!user) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
@@ -166,7 +167,7 @@ const deleteAcademicYear = async (req, res) => {
       where: { userId: user.id },
     });
     if (!admin) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "Admin not found",
       });
     }
@@ -174,12 +175,12 @@ const deleteAcademicYear = async (req, res) => {
       where: { id },
     });
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "Academic year deleted successfully",
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -199,13 +200,13 @@ const viewAcademicYears = async (req, res) => {
 
     const academicYears = await prisma.academicYear.findMany(queryOptions);
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "Academic years retrieved successfully",
       academicYears,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -219,7 +220,7 @@ const createFaculty = async (req, res) => {
   });
 
   if (!user) {
-    return res.status(404).json({
+    return res.status(StatusCodes.NOT_FOUND).json({
       message: "User not found",
     });
   }
@@ -229,7 +230,7 @@ const createFaculty = async (req, res) => {
   });
 
   if (!admin) {
-    return res.status(404).json({
+    return res.status(StatusCodes.NOT_FOUND).json({
       message: "Admin not found",
     });
   }
@@ -247,13 +248,13 @@ const createFaculty = async (req, res) => {
       data: facultyData,
     });
 
-    res.status(201).json({
+    res.status(StatusCodes.OK).json({
       message: "Faculty created successfully",
       faculty,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -268,13 +269,13 @@ const updateFaculty = async (req, res) => {
       data: { name },
     });
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "Faculty updated successfully",
       faculty,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -288,12 +289,12 @@ const deleteFaculty = async (req, res) => {
       where: { id },
     });
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "Faculty deleted successfully",
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -323,13 +324,13 @@ const viewFaculties = async (req, res) => {
 
     const faculties = await prisma.faculty.findMany(queryOptions);
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       message: "Faculties retrieved successfully",
       faculties,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
@@ -388,7 +389,7 @@ const viewAllAccount = async (req, res) => {
       
     }
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       account: allAcademicYears,
     });
   } catch (error) {
