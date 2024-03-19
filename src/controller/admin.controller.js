@@ -71,29 +71,28 @@ const createAccountForUser = async (req, res) => {
 };
 
 const createAcademicYear = async (req, res) => {
+  const { closure_date, final_closure_date } = req.body;
   try {
-    const { closure_date, final_closure_date } = req.body;
-
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
-
-    const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
     const user = await prisma.user.findUnique({
-      where: { email: decodedPayload.data.email },
+      where: { email: req.decodedPayload.data.email },
     });
+  
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
+  
     const admin = await prisma.admin.findUnique({
       where: { userId: user.id },
     });
+  
     if (!admin) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "Admin not found",
       });
     }
+  
 
     const academicYear = {
       closure_date,
@@ -107,6 +106,7 @@ const createAcademicYear = async (req, res) => {
 
     res.status(StatusCodes.OK).json({
       message: "Academic year created successfully",
+      academicYear,
     });
   } catch (error) {
     console.error(error);
@@ -117,31 +117,33 @@ const createAcademicYear = async (req, res) => {
 };
 
 const updateAcademicYear = async (req, res) => {
-  const { id, closure_date, final_closure_date } = req.body;
+  const {Id} = req.params;
+  const { closure_date, final_closure_date } = req.body;
 
   try {
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
-
-    const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
     const user = await prisma.user.findUnique({
-      where: { email: decodedPayload.data.email },
+      where: { email: req.decodedPayload.data.email },
     });
+  
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
+  
     const admin = await prisma.admin.findUnique({
       where: { userId: user.id },
     });
+  
     if (!admin) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "Admin not found",
       });
     }
+  
+
     const academicYear = await prisma.academicYear.update({
-      where: { id },
+      where: { id: Id },
       data: { closure_date, final_closure_date },
     });
 
@@ -158,31 +160,32 @@ const updateAcademicYear = async (req, res) => {
 };
 
 const deleteAcademicYear = async (req, res) => {
-  const { id } = req.params;
+  const { Id } = req.params;
 
   try {
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
-
-    const decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
     const user = await prisma.user.findUnique({
-      where: { email: decodedPayload.data.email },
+      where: { email: req.decodedPayload.data.email },
     });
+  
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
+  
     const admin = await prisma.admin.findUnique({
       where: { userId: user.id },
     });
+  
     if (!admin) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "Admin not found",
       });
     }
+  
+
     await prisma.academicYear.delete({
-      where: { id },
+      where: { id: Id},
     });
 
     res.status(StatusCodes.OK).json({
@@ -199,8 +202,13 @@ const deleteAcademicYear = async (req, res) => {
 const viewAcademicYears = async (req, res) => {
   try {
     const { sort } = req.query;
-
-    const queryOptions = {};
+    const limit = 10;
+    let offset = 0;
+    let allAcademicYears = [];
+    const queryOptions = {
+      take: limit,
+      skip: offset,
+    };
 
     if (sort) {
       queryOptions.orderBy = {
@@ -208,11 +216,20 @@ const viewAcademicYears = async (req, res) => {
       };
     }
 
-    const academicYears = await prisma.academicYear.findMany(queryOptions);
+    while (true) {
+      const academicYears = await prisma.academicYear.findMany(queryOptions);
+
+      if (academicYears.length === 0) {
+        break;
+      }
+
+      allAcademicYears.push(academicYears);
+      offset += limit;
+      queryOptions.skip = offset;
+    }
 
     res.status(StatusCodes.OK).json({
-      message: "Academic years retrieved successfully",
-      academicYears,
+      allAcademicYears: allAcademicYears,
     });
   } catch (error) {
     console.error(error);
@@ -221,6 +238,8 @@ const viewAcademicYears = async (req, res) => {
     });
   }
 };
+
+
 
 //FACULTY CRUD
 const createFaculty = async (req, res) => {
@@ -271,11 +290,12 @@ const createFaculty = async (req, res) => {
 };
 
 const updateFaculty = async (req, res) => {
-  const { id, name } = req.body;
+  const {name} = req.body;
+  const { Id } = req.params;
 
   try {
     const faculty = await prisma.faculty.update({
-      where: { id },
+      where: {id: Id },
       data: { name },
     });
 
@@ -292,11 +312,11 @@ const updateFaculty = async (req, res) => {
 };
 
 const deleteFaculty = async (req, res) => {
-  const { facultyId } = req.params;
+  const { Id } = req.params;
 
   try {
     await prisma.faculty.delete({
-      where: { id: facultyId },
+      where: { id: Id },
     });
 
     res.status(StatusCodes.OK).json({
@@ -313,30 +333,43 @@ const deleteFaculty = async (req, res) => {
 const viewFaculties = async (req, res) => {
   try {
     const { sort, name } = req.query;
+    const limit = 10;
+    let offset = 0;
+    let allFaculties = [];
+    const queryOptions = {
+      take: limit,
+      skip: offset,
+    };
 
-    const queryOptions = {};
-    // sample http://localhost:3000/admin/viewFaculties?name=IT
     if (name) {
       queryOptions.where = {
         name: {
           contains: name,
-          mode: "insensitive", //support case-insensitive filtering
+          mode: "insensitive",
         },
       };
     }
 
-    // sample http://localhost:3000/admin/viewFaculties?sort=asc
     if (sort) {
       queryOptions.orderBy = {
         createAt: sort === "asc" ? "asc" : "desc",
       };
     }
 
-    const faculties = await prisma.faculty.findMany(queryOptions);
+    while (true) {
+      const faculties = await prisma.faculty.findMany(queryOptions);
+
+      if (faculties.length === 0) {
+        break;
+      }
+
+      allFaculties.push(faculties);
+      offset += limit;
+      queryOptions.skip = offset;
+    }
 
     res.status(StatusCodes.OK).json({
-      message: "Faculties retrieved successfully",
-      faculties,
+      allFaculties: allFaculties,
     });
   } catch (error) {
     console.error(error);
