@@ -22,7 +22,6 @@ let validateRegister = () => {
       )
       .notEmpty()
       .withMessage("Password is required"),
-    check("role").notEmpty().withMessage("role is required"),
     check("avatar").notEmpty().withMessage("avatar is required"),
   ];
 };
