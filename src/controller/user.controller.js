@@ -287,18 +287,11 @@ const viewMyContributions = async (req, res) => {
         take: limit,
       });
       
-      const restructuredContributions = contributions.map((contribution) => ({
-        ...contribution,
-        closure_date: contribution.AcademicYear.closure_date,
-        final_closure_date: contribution.AcademicYear.final_closure_date,
-        AcademicYear: undefined, 
-      }));
-
       if (contributions.length === 0) {
         break;
       }
 
-      allMyContributions.push(restructuredContributions);
+      allMyContributions.push(contributions);
       offset += limit;
     }
 
