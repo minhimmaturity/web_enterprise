@@ -50,7 +50,10 @@ const createAccountForUser = async (req, res) => {
       default_pasword: passwordAfterHash,
       avatar: avatar,
       // Include faculty if the user is coordinator or student
-      Faculty: (userRole === Role.COORDINATOR || userRole === Role.STUDENT) ? faculty : null,
+      Faculty:
+        userRole === Role.COORDINATOR || userRole === Role.STUDENT
+          ? faculty
+          : null,
     };
 
     const createUser = await prisma.user.create({ data: user });
@@ -66,7 +69,6 @@ const createAccountForUser = async (req, res) => {
     });
   }
 };
-
 
 const createAcademicYear = async (req, res) => {
   try {
@@ -156,7 +158,7 @@ const updateAcademicYear = async (req, res) => {
 };
 
 const deleteAcademicYear = async (req, res) => {
-  const { id } = req.body;
+  const { id } = req.params;
 
   try {
     const authHeader = req.headers["authorization"];
@@ -202,7 +204,7 @@ const viewAcademicYears = async (req, res) => {
 
     if (sort) {
       queryOptions.orderBy = {
-        closure_date: sort === 'asc' ? 'asc' : 'desc',
+        closure_date: sort === "asc" ? "asc" : "desc",
       };
     }
 
@@ -290,11 +292,11 @@ const updateFaculty = async (req, res) => {
 };
 
 const deleteFaculty = async (req, res) => {
-  const { id } = req.body;
+  const { facultyId } = req.params;
 
   try {
     await prisma.faculty.delete({
-      where: { id },
+      where: { id: facultyId },
     });
 
     res.status(StatusCodes.OK).json({
@@ -318,7 +320,7 @@ const viewFaculties = async (req, res) => {
       queryOptions.where = {
         name: {
           contains: name,
-          mode: 'insensitive', //support case-insensitive filtering
+          mode: "insensitive", //support case-insensitive filtering
         },
       };
     }
@@ -326,7 +328,7 @@ const viewFaculties = async (req, res) => {
     // sample http://localhost:3000/admin/viewFaculties?sort=asc
     if (sort) {
       queryOptions.orderBy = {
-        createAt: sort === 'asc' ? 'asc' : 'desc',
+        createAt: sort === "asc" ? "asc" : "desc",
       };
     }
 
@@ -350,19 +352,18 @@ const viewAllAccount = async (req, res) => {
     let offset = 0;
     let allAcademicYears = [];
     const { name, email, role } = req.query;
-  
+
     while (true) {
       const queryOptions = {
         skip: offset, // bỏ qua bao nhiêu bản ghi
-        take: limit,// lấy bao nhiêu bản ghi
-
+        take: limit, // lấy bao nhiêu bản ghi
       };
 
       if (name) {
         queryOptions.where = {
           name: {
             contains: name,
-            mode: 'insensitive', //support case-insensitive filtering
+            mode: "insensitive", //support case-insensitive filtering
           },
         };
       }
@@ -371,7 +372,7 @@ const viewAllAccount = async (req, res) => {
         queryOptions.where = {
           email: {
             contains: email,
-            mode: 'insensitive', //support case-insensitive filtering
+            mode: "insensitive", //support case-insensitive filtering
           },
         };
       }
@@ -385,7 +386,7 @@ const viewAllAccount = async (req, res) => {
         };
       }
 
-      const academicYears = await prisma.user.findMany(queryOptions)
+      const academicYears = await prisma.user.findMany(queryOptions);
 
       if (academicYears.length === 0) {
         // No more documents left to fetch
@@ -393,8 +394,7 @@ const viewAllAccount = async (req, res) => {
       }
 
       allAcademicYears.push(academicYears);
-      offset += limit; 
-      
+      offset += limit;
     }
 
     res.status(StatusCodes.OK).json({
