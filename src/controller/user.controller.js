@@ -160,19 +160,19 @@ const resetPassword = async (req, res) => {
 
 const uploadContribution = async (req, res) => {
   try {
-    const {title, description} = req.body;
+    const { title, description } = req.body;
     if (!title) {
       throw new Error("Title is empty");
     }
-    
+
     if (!description) {
       throw new Error("Description is empty");
     }
-    
-    const images = req.files['image'];
-    const documents = req.files['document'];
 
-    if(!req.files['image']&&!req.files['document']) {
+    const images = req.files["image"];
+    const documents = req.files["document"];
+
+    if (!req.files["image"] && !req.files["document"]) {
       throw new Error("No file is chosen");
     }
 
@@ -188,34 +188,38 @@ const uploadContribution = async (req, res) => {
     if (!academicYear) {
       throw new Error("No academic year found for the current timestamp");
     }
-    
+
     //auth
     const user = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
     });
-  
+
     if (!user) {
       throw new Error("User not found");
     }
 
     // Create array
-    const imageData = images ? images.map(image => ({
-      name: image.originalname,
-      path: image.path,
-    })) : [];
+    const imageData = images
+      ? images.map((image) => ({
+          name: image.originalname,
+          path: image.path,
+        }))
+      : [];
 
-    const documentData = documents ? documents.map(document => ({
-      name: document.originalname,
-      path: document.path,
-    })) : [];
+    const documentData = documents
+      ? documents.map((document) => ({
+          name: document.originalname,
+          path: document.path,
+        }))
+      : [];
 
     const contribution = {
       title: title,
       description: description,
       AcademicYearId: academicYear.id,
       userId: user.id,
-      Documents: { createMany: { data: documentData } }, 
-      Image: { createMany: { data: imageData } }
+      Documents: { createMany: { data: documentData } },
+      Image: { createMany: { data: imageData } },
     };
 
     await prisma.contribution.create({
@@ -226,39 +230,36 @@ const uploadContribution = async (req, res) => {
       message: "Contribution created successfully",
     });
   } catch (error) {
-    
     //delete file if error
-    const images = req.files['image'];
-    const documents = req.files['document'];
-    const files=[]
-    if(!images &&!documents) {
-      files==[]
-    }
-    else if (!images){
+    const images = req.files["image"];
+    const documents = req.files["document"];
+    const files = [];
+    if (!images && !documents) {
+      files == [];
+    } else if (!images) {
       files == [...documents];
+    } else if (!documents) {
+      files == [...images];
+    } else {
+      files == [...images, ...documents];
     }
-    else if(!documents){
-      files == [...images]
-    }
-    else{
-    files == [...images, ...documents];}
     for (index = 0, len = files.length; index < len; index++) {
-      console.log(files[index].path)
+      console.log(files[index].path);
       fs.unlinkSync(files[index].path);
     }
     console.error(error);
     res.status(StatusCodes.BAD_GATEWAY).json({
       message: error.message,
     });
-  } 
-}
+  }
+};
 
 const viewMyContributions = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
     });
-  
+
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
@@ -272,24 +273,38 @@ const viewMyContributions = async (req, res) => {
     while (true) {
       const contributions = await prisma.contribution.findMany({
         where: {
-          userId: user.id, 
+          userId: user.id,
+        },
+        include: {
+          AcademicYear: {
+            select: {
+              closure_date: true,
+              final_closure_date: true,
+            },
+          },
         },
         skip: offset,
         take: limit,
       });
+      
+      const restructuredContributions = contributions.map((contribution) => ({
+        ...contribution,
+        closure_date: contribution.AcademicYear.closure_date,
+        final_closure_date: contribution.AcademicYear.final_closure_date,
+        AcademicYear: undefined, 
+      }));
 
       if (contributions.length === 0) {
         break;
       }
 
-      allMyContributions.push(contributions);
-      offset += limit; 
+      allMyContributions.push(restructuredContributions);
+      offset += limit;
     }
 
     res.status(StatusCodes.OK).json({
-      contribution: allMyContributions
+      contribution: allMyContributions,
     });
-
   } catch (error) {
     console.error(error);
     res.status(StatusCodes.BAD_GATEWAY).json({
