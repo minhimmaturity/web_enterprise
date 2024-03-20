@@ -17,6 +17,7 @@ const { authMiddleware } = require("../../middleware/checkRole");
 const { Role } = require("@prisma/client");
 const validate = require("../../middleware/validate");
 const admin = express.Router();
+const {  validationResult } = require("express-validator");
 
 admin.use(express.json());
 
@@ -25,8 +26,8 @@ admin.post(
   validate.validateRegister(),
   createAccountForUser
 );
-//ACADEMIC YEAR
-admin.post("/createAcademicYear", authMiddleware([Role.ADMIN]), validateCreateAcademicYear(), (req, res, next) => {
+// ACADEMIC YEAR
+admin.post("/createAcademicYear", authMiddleware([Role.ADMIN]), validate.validateCreateAcademicYear(), (req, res, next) => {
     const errors = validationResult(req);
   
     if (!errors.isEmpty()) {
@@ -35,6 +36,7 @@ admin.post("/createAcademicYear", authMiddleware([Role.ADMIN]), validateCreateAc
 
     createAcademicYear(req, res, next);
   });
+// admin.post("/createAcademicYear", authMiddleware([Role.ADMIN]), createAcademicYear);
 admin.put("/updateAcademicYear/:Id", authMiddleware([Role.ADMIN]),  updateAcademicYear);
 admin.delete("/deleteAcademicYear/:Id", authMiddleware([Role.ADMIN]), deleteAcademicYear);
 admin.get("/viewAcademicYears", authMiddleware([Role.ADMIN]), viewAcademicYears);

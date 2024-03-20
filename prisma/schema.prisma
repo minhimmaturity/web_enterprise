@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,13 +5,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-enum Role {
-  STUDENT
-  ADMIN
-  COORDIONATOR
-  MANAGER
 }
 
 model User {
@@ -26,55 +16,55 @@ model User {
   updatedAt          DateTime             @updatedAt
   role               Role
   is_locked          Boolean              @default(false)
-  avatar             String
   default_pasword    String
-  Admin              Admin?
-  Conservation       Conversation[]
-  UserOnConservation UserOnConservation[]
-  Message            Message[]
-  Contribution       Contribution[]
-  Notification       Notification[]
-  Comment            Comment?
+  avatar             String
   FacultyId          String?
+  Admin              Admin?
+  Comment            Comment?
+  Contribution       Contribution[]
+  Message            Message[]
+  Notification       Notification[]
   Faculty            Faculty?             @relation(fields: [FacultyId], references: [id], onDelete: Cascade)
+  UserOnConservation UserOnConservation[]
+  Conservation       Conversation[]       @relation("ConversationToUser")
 }
 
 model Admin {
   id           String         @id @default(uuid())
   userId       String         @unique
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  faculty      Faculty[]
   createAt     DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   AcademicYear AcademicYear[]
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  faculty      Faculty[]
 }
 
 model Faculty {
-  id           String         @id @default(uuid())
-  name         String
-  Admin        Admin          @relation(fields: [createBy], references: [id], onDelete: Cascade)
-  createBy     String
-  createAt     DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  User         User[]
+  id        String   @id @default(uuid())
+  name      String
+  createBy  String
+  createAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Admin     Admin    @relation(fields: [createBy], references: [id], onDelete: Cascade)
+  User      User[]
 }
 
 model Conversation {
   id                 String               @id @default(uuid())
-  user               User[]
   createAt           DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
-  UserOnConservation UserOnConservation[]
   Message            Message[]
+  UserOnConservation UserOnConservation[]
+  user               User[]               @relation("ConversationToUser")
 }
 
 model UserOnConservation {
-  user           User         @relation(fields: [userId], references: [id])
   userId         String
-  Conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String
   createAt       DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  Conversation   Conversation @relation(fields: [conversationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
 
   @@id([userId, conversationId])
 }
@@ -82,22 +72,22 @@ model UserOnConservation {
 model Message {
   id             String       @id @default(uuid())
   text           String
-  sender         User         @relation(fields: [userId], references: [id]) // Reference the user who sent the message
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   userId         String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  sender         User         @relation(fields: [userId], references: [id])
 }
 
 model AcademicYear {
   id                 String         @id @default(uuid())
   closure_date       DateTime
-  final_closure_date DateTime
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
-  admin              Admin          @relation(fields: [adminId], references: [id], onDelete: Cascade)
   adminId            String
+  final_closure_date DateTime
+  admin              Admin          @relation(fields: [adminId], references: [id], onDelete: Cascade)
   Contribution       Contribution[]
 }
 
@@ -107,17 +97,17 @@ model Contribution {
   description    String
   is_disabled    Boolean       @default(false)
   is_choosen     Boolean       @default(false)
-  is_public      Boolean       @default(false)
-  AcademicYear   AcademicYear  @relation(fields: [AcademicYearId], references: [id], onDelete: Cascade)
-  AcademicYearId String
   userId         String
-  user           User          @relation(fields: [userId], references: [id])
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-  Image          Image[]
-  Documents      Documents[]
-  Notification   Notification?
+  is_public      Boolean       @default(false)
+  AcademicYearId String
   Comment        Comment[]
+  AcademicYear   AcademicYear  @relation(fields: [AcademicYearId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id])
+  Documents      Documents[]
+  Image          Image[]
+  Notification   Notification?
 }
 
 model Image {
@@ -126,16 +116,16 @@ model Image {
   path           String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
   contributionId String
+  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
   id             String       @id @default(uuid())
   content        String
-  contribution   Contribution @relation(fields: [contributionId], references: [id])
   contributionId String       @unique
   userId         String
+  contribution   Contribution @relation(fields: [contributionId], references: [id])
   user           User         @relation(fields: [userId], references: [id])
 }
 
@@ -145,8 +135,8 @@ model Documents {
   path           String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  contribution   Contribution @relation(fields: [contributionId], references: [id])
   contributionId String
+  contribution   Contribution @relation(fields: [contributionId], references: [id])
 }
 
 model Comment {
@@ -154,8 +144,15 @@ model Comment {
   content        String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         String       @unique
-  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
   contributionId String
+  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+  COORDIONATOR
+  MANAGER
 }

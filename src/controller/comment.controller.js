@@ -1,8 +1,21 @@
 const prisma = require('@prisma/client');
-
 const createComment = async (req, res) => {
   const { content, userId, contributionId } = req.body;
   try {
+    const currentUser = await prisma.user.findUnique({
+      where: { email: req.decodedPayload.data.email },
+    });
+  
+    if (!currentUser) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
+  
+    const existingUser = await prisma.user.findUnique({
+      where: { userId: currentUser.id },
+    });
+  
     const comment = await prisma.comment.create({
       data: { content, userId, contributionId },
     });
@@ -11,6 +24,7 @@ const createComment = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 const getComments = async (req, res) => {
   try {

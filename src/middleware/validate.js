@@ -70,12 +70,6 @@ let validateCreateAccountForUser = () => {
 
 let validateUpdateAcademicYear = () => {
   return [
-
-    check("Id")
-      .notEmpty()
-      .withMessage("Academic year ID is required")
-      .isInt({ min: 1 })
-      .withMessage("Invalid academic year ID"),
     check("closure_date")
       .optional()
       .isISO8601()
@@ -87,16 +81,7 @@ let validateUpdateAcademicYear = () => {
   ];
 };
 
-let validateDeleteAcademicYear = () => {
-  return [
-    // Validation rules for deleting academic years
-    check("Id")
-      .notEmpty()
-      .withMessage("Academic year ID is required")
-      .isInt({ min: 1 })
-      .withMessage("Invalid academic year ID"),
-  ];
-};
+
 const validateCreateAcademicYear = () => {
   return [
     // Validation rules for creating academic years
@@ -119,7 +104,6 @@ let validate = {
   validateCreateAccountForUser: validateCreateAccountForUser,
   validateCreateAcademicYear: validateCreateAcademicYear,
   validateUpdateAcademicYear: validateUpdateAcademicYear,
-  validateDeleteAcademicYear: validateDeleteAcademicYear,
 };
 
 module.exports = validate;

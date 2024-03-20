@@ -7,7 +7,7 @@ const {
   refreshAccessToken,
   editUserProfile,
 } = require("../../controller/auth.controller");
-const { body, validationResult } = require("express-validator");
+const {  validationResult } = require("express-validator");
 const { publicPosts, privatePosts } = require("../../../database");
 const validate = require("../../middleware/validate");
 

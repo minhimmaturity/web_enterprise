@@ -1,7 +1,7 @@
 const multer = require("multer");
 const path = require("path");
 var appRoot = require("app-root-path");
-
+const {StatusCodes} = require("http-status-codes");
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     //filter image and document

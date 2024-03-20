@@ -160,7 +160,7 @@ const resetPassword = async (req, res) => {
 
 const uploadContribution = async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description,  } = req.body;
     if (!title) {
       throw new Error("Title is empty");
     }
@@ -253,7 +253,6 @@ const uploadContribution = async (req, res) => {
     });
   }
 };
-
 const viewMyContributions = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -276,7 +275,7 @@ const viewMyContributions = async (req, res) => {
           userId: user.id,
         },
         include: {
-          AcademicYear: {
+          AcademicYear: { // Assuming academicYear is a related model
             select: {
               closure_date: true,
               final_closure_date: true,
@@ -287,7 +286,6 @@ const viewMyContributions = async (req, res) => {
         take: limit,
       });
       
-
       if (contributions.length === 0) {
         break;
       }
