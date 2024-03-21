@@ -7,6 +7,9 @@ const jwt = require("jsonwebtoken");
 const fs = require("fs");
 const prisma = new PrismaClient();
 const { StatusCodes } = require("http-status-codes");
+const { initializeApp } = require("firebase/app");
+const { getDownloadURL, ref, uploadBytes } = require("firebase/storage");
+const storage = require("../utils/firebase");
 
 const changePassword = async (req, res) => {
   try {
@@ -160,7 +163,7 @@ const resetPassword = async (req, res) => {
 
 const uploadContribution = async (req, res) => {
   try {
-    const { title, description,  } = req.body;
+    const { title, description } = req.body;
     if (!title) {
       throw new Error("Title is empty");
     }
@@ -172,16 +175,15 @@ const uploadContribution = async (req, res) => {
     const images = req.files["image"];
     const documents = req.files["document"];
 
-    if (!req.files["image"] && !req.files["document"]) {
+    if (!images && !documents) {
       throw new Error("No file is chosen");
     }
 
     const currentTimestamp = new Date();
 
-    // Find the academic year ID by the current time
     const academicYear = await prisma.academicYear.findFirst({
       where: {
-        closure_date: { gte: currentTimestamp }, // Now should be less than or equal to clousedate
+        closure_date: { gte: currentTimestamp },
       },
     });
 
@@ -189,7 +191,6 @@ const uploadContribution = async (req, res) => {
       throw new Error("No academic year found for the current timestamp");
     }
 
-    //auth
     const user = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
     });
@@ -198,20 +199,35 @@ const uploadContribution = async (req, res) => {
       throw new Error("User not found");
     }
 
-    // Create array
-    const imageData = images
-      ? images.map((image) => ({
+    const imageUploadPromises = [];
+    const imageData = [];
+    if (images) {
+      for (const image of images) {
+        const imageRef = ref(storage, "images/" + image.originalname);
+        await uploadBytes(imageRef, image.buffer);
+        const downloadUrl = await getDownloadURL(imageRef);
+        imageData.push({
           name: image.originalname,
-          path: image.path,
-        }))
-      : [];
+          path: downloadUrl,
+        });
+      }
+    }
 
-    const documentData = documents
-      ? documents.map((document) => ({
+    const documentUploadPromises = [];
+    const documentData = [];
+    if (documents) {
+      for (const document of documents) {
+        const documentRef = ref(storage, "documents/" + document.originalname);
+        await uploadBytes(documentRef, document.buffer);
+        const downloadUrl = await getDownloadURL(documentRef);
+        documentData.push({
           name: document.originalname,
-          path: document.path,
-        }))
-      : [];
+          path: downloadUrl,
+        });
+      }
+    }
+
+    await Promise.all([...imageUploadPromises, ...documentUploadPromises]);
 
     const contribution = {
       title: title,
@@ -230,29 +246,15 @@ const uploadContribution = async (req, res) => {
       message: "Contribution created successfully",
     });
   } catch (error) {
-    //delete file if error
-    const images = req.files["image"];
-    const documents = req.files["document"];
-    const files = [];
-    if (!images && !documents) {
-      files == [];
-    } else if (!images) {
-      files == [...documents];
-    } else if (!documents) {
-      files == [...images];
-    } else {
-      files == [...images, ...documents];
-    }
-    for (index = 0, len = files.length; index < len; index++) {
-      console.log(files[index].path);
-      fs.unlinkSync(files[index].path);
-    }
     console.error(error);
     res.status(StatusCodes.BAD_GATEWAY).json({
       message: error.message,
     });
   }
 };
+
+
+
 const viewMyContributions = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({

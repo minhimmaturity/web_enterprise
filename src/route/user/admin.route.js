@@ -11,6 +11,7 @@ const {
   deleteAcademicYear,
   viewAllAccount,
   viewAcademicYears,
+  editUserProfile
 } = require("../../controller/admin.controller");
 
 const { authMiddleware } = require("../../middleware/checkRole");
@@ -46,6 +47,9 @@ admin.post("/createFaculty", authMiddleware([Role.ADMIN]), createFaculty)
 admin.put("/updateFaculty/:Id", authMiddleware([Role.ADMIN]),  updateFaculty);
 admin.delete("/deleteFaculty/:Id", authMiddleware([Role.ADMIN]), deleteFaculty);
 admin.get("/viewFaculties", authMiddleware([Role.ADMIN]), viewFaculties);//chunk
+
+//Users
 admin.get("/viewAllAccount", authMiddleware([Role.ADMIN]), viewAllAccount)
+admin.put("/editUser/:Id", authMiddleware([Role.ADMIN]), editUserProfile)
 
 module.exports = admin;

@@ -76,23 +76,23 @@ const createAcademicYear = async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
     });
-  
+
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
-  
+
     const admin = await prisma.admin.findUnique({
       where: { userId: user.id },
     });
-  
+
     if (!admin) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "Admin not found",
       });
     }
-  
+
 
     const academicYear = {
       closure_date,
@@ -117,30 +117,30 @@ const createAcademicYear = async (req, res) => {
 };
 
 const updateAcademicYear = async (req, res) => {
-  const {Id} = req.params;
+  const { Id } = req.params;
   const { closure_date, final_closure_date } = req.body;
 
   try {
     const user = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
     });
-  
+
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
-  
+
     const admin = await prisma.admin.findUnique({
       where: { userId: user.id },
     });
-  
+
     if (!admin) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "Admin not found",
       });
     }
-  
+
 
     const academicYear = await prisma.academicYear.update({
       where: { id: Id },
@@ -166,26 +166,26 @@ const deleteAcademicYear = async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
     });
-  
+
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
-  
+
     const admin = await prisma.admin.findUnique({
       where: { userId: user.id },
     });
-  
+
     if (!admin) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "Admin not found",
       });
     }
-  
+
 
     await prisma.academicYear.delete({
-      where: { id: Id},
+      where: { id: Id },
     });
 
     res.status(StatusCodes.OK).json({
@@ -290,12 +290,12 @@ const createFaculty = async (req, res) => {
 };
 
 const updateFaculty = async (req, res) => {
-  const {name} = req.body;
+  const { name } = req.body;
   const { Id } = req.params;
 
   try {
     const faculty = await prisma.faculty.update({
-      where: {id: Id },
+      where: { id: Id },
       data: { name },
     });
 
@@ -437,7 +437,35 @@ const viewAllAccount = async (req, res) => {
     console.log(error.message);
   }
 };
+const editUserProfile = async (req, res) => {
+  const { Id } = req.params;
+  const { name, avatar, is_locked } = req.body;
 
+  try {
+    const user = await prisma.user.findUnique({ where: { id : Id } });
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id:Id },
+      data: { name, avatar, is_locked: is_locked === 'true' },
+    });
+
+    res.status(StatusCodes.OK).json({
+      message: "User profile updated successfully",
+      updatedUser,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(StatusCodes.BAD_GATEWAY).json({
+      message: "Internal Server Error",
+    });
+  }
+}; 
 module.exports = {
   createAccountForUser,
   createAcademicYear,
@@ -449,4 +477,5 @@ module.exports = {
   deleteAcademicYear,
   viewAcademicYears,
   viewAllAccount,
+  editUserProfile
 };
