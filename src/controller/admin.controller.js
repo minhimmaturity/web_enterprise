@@ -16,59 +16,67 @@ const createAccountForUser = async (req, res) => {
     const password = randomstring.generate();
     const passwordAfterHash = await hashPassword(password);
 
-    const roleMapping = {
-      "Marketing Manager": Role.MANAGER,
-      "Marketing Coordinator": Role.COORDINATOR,
-    };
-
     const existingUser = await prisma.user.findUnique({
       where: {
         email,
       },
     });
 
-    await sendMailToUser(email, password, name);
-
     if (existingUser) {
-      return res.status(StatusCodes.NOT_ACCEPTABLE).json({
+      return res.status(StatusCodes.CONFLICT).json({
         message: "User with this email already exists",
       });
     }
 
-    let userRole = Role.STUDENT; // Default role
-
-    // Check if the role is coordinator or student to determine whether to include faculty
-    if (role === "Marketing Coordinator" || role === "Student") {
-      userRole = roleMapping[role];
+    // Validate role
+    if (!Object.values(Role).includes(role)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Invalid role",
+      });
     }
 
-    const user = {
-      name,
-      email,
-      password: passwordAfterHash,
-      role: userRole,
-      default_pasword: passwordAfterHash,
-      avatar: avatar,
-      // Include faculty if the user is coordinator or student
-      Faculty:
-        userRole === Role.COORDINATOR || userRole === Role.STUDENT
-          ? faculty
-          : null,
-    };
+    let user;
+    if (role === "COORDIONATOR" || role === "STUDENT") {
+      user = {
+        name,
+        email,
+        password: passwordAfterHash,
+        role: role === "Marketing Coordinator" ? Role.COORDIONATOR : Role.STUDENT,
+        default_pasword: passwordAfterHash,
+        avatar,
+        // Include faculty if the user is coordinator or student
+        FacultyId: faculty,
+      };
+    } else if (role === "MANAGER") {
+      user = {
+        name,
+        email,
+        password: passwordAfterHash,
+        role: Role.MANAGER,
+        default_pasword: passwordAfterHash,
+        avatar,
+        FacultyId: null,
+      };
+    }
 
-    const createUser = await prisma.user.create({ data: user });
+    // Create user
+    const createdUser = await prisma.user.create({ data: user });
 
-    res.status(StatusCodes.OK).json({
+    // Send email to user
+    await sendMailToUser(email, password, name);
+
+    res.status(StatusCodes.CREATED).json({
       message: "User created successfully",
-      user: createUser,
+      user: createdUser,
     });
   } catch (error) {
     console.error(error);
-    res.status(StatusCodes.BAD_GATEWAY).json({
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       message: "Internal Server Error",
     });
   }
 };
+
 
 const createAcademicYear = async (req, res) => {
   const { closure_date, final_closure_date } = req.body;

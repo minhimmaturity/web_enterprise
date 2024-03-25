@@ -8,23 +8,25 @@ const user = require("./route/user/user.route");
 const bodyParser = require("body-parser");
 const hbs = require("hbs");
 const cors = require("cors");
+const { createServer } = require('http');
 const { Server } = require('socket.io');
+const { join } = require('path');
 
 dotenv.config();
 
 const app = express();
 app.use(morgan("combined"));
 const prisma = new PrismaClient();
+const server = createServer(app);
 const io = new Server(server);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-io.on('connection', (socket) => {
-  console.log(`a user ${socket.io} connected`);
-  socket.on('disconnect', () => {
-    console.log(`a user ${socket.io} connected`);
-  });
+
+app.get('/', (req, res) => {
+  res.sendFile(join(__dirname, 'index.html'));
 });
+
 app.use(
   cors({
     origin: true, // Set it to true to allow all origins or provide a specific origin or an array of origins
@@ -42,6 +44,7 @@ app.set("view engine", "hbs");
 hbs.registerHelper("helper_name", function (options) {
   return "helper value";
 });
+
 hbs.registerPartial("partial_name", "partial value");
 
 const HOST = process.env.HOST;
@@ -52,6 +55,12 @@ const main = async () => {
     app.use("/user", user);
     app.use("/auth", auth);
     app.use("/admin", admin);
+    io.on('connection', (socket) => {
+      console.log('a user connected');
+      socket.on('disconnect', () => {
+        console.log('user disconnected');
+      });
+    });
     app.listen(PORT, () => {
       console.log(`Server is starting at http://${HOST}:${PORT}`);
     });
