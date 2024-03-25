@@ -8,15 +8,23 @@ const user = require("./route/user/user.route");
 const bodyParser = require("body-parser");
 const hbs = require("hbs");
 const cors = require("cors");
+const { Server } = require('socket.io');
 
 dotenv.config();
 
 const app = express();
 app.use(morgan("combined"));
 const prisma = new PrismaClient();
+const io = new Server(server);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+io.on('connection', (socket) => {
+  console.log(`a user ${socket.io} connected`);
+  socket.on('disconnect', () => {
+    console.log(`a user ${socket.io} connected`);
+  });
+});
 app.use(
   cors({
     origin: true, // Set it to true to allow all origins or provide a specific origin or an array of origins
