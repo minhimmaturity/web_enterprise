@@ -41,7 +41,7 @@ const createAccountForUser = async (req, res) => {
         name,
         email,
         password: passwordAfterHash,
-        role: role === "Marketing Coordinator" ? Role.COORDIONATOR : Role.STUDENT,
+        role: role === "COORDIONATOR" ? Role.COORDIONATOR : Role.STUDENT,
         default_pasword: passwordAfterHash,
         avatar,
         // Include faculty if the user is coordinator or student
