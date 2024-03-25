@@ -474,6 +474,46 @@ const editUserProfile = async (req, res) => {
     });
   }
 }; 
+
+const viewMyProfile = async (req, res) => {
+  try {
+  const user = await prisma.user.findUnique({
+    where: { email: req.decodedPayload.data.email },
+  });
+
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "User not found",
+    });
+  }
+
+  const admin = await prisma.admin.findUnique({
+    where: { userId: user.id },
+  });
+
+  if (!admin) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "Admin not found",
+    });
+  }
+
+  const userProfile = await prisma.user.findMany({
+    where: {
+      id: admin.userId,
+    },
+  });
+    
+    res.status(StatusCodes.OK).json({
+      userProfile
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(StatusCodes.BAD_GATEWAY).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
 module.exports = {
   createAccountForUser,
   createAcademicYear,
@@ -485,5 +525,5 @@ module.exports = {
   deleteAcademicYear,
   viewAcademicYears,
   viewAllAccount,
-  editUserProfile
+  editUserProfile,viewMyProfile
 };

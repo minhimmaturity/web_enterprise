@@ -10,6 +10,7 @@ const { StatusCodes } = require("http-status-codes");
 const { initializeApp } = require("firebase/app");
 const { getDownloadURL, ref, uploadBytes } = require("firebase/storage");
 const storage = require("../utils/firebase");
+const removeFile = require("../utils/remove-file");
 
 const changePassword = async (req, res) => {
   try {
@@ -164,19 +165,27 @@ const resetPassword = async (req, res) => {
 const uploadContribution = async (req, res) => {
   try {
     const { title, description } = req.body;
+    const images = req.files["image"];
+    const documents = req.files["document"];
+    const files = (!images && !documents) ? [] : (!images ? [...documents] : (!documents ? [...images] : [...images, ...documents])); 
     if (!title) {
-      throw new Error("Title is empty");
+      removeFile(files);
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Title is required",
+      });
     }
 
     if (!description) {
-      throw new Error("Description is empty");
+      removeFile(files);
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Description is required",
+      });
     }
 
-    const images = req.files["image"];
-    const documents = req.files["document"];
-
     if (!images && !documents) {
-      throw new Error("No file is chosen");
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "No file is chosen",
+      });
     }
 
     const currentTimestamp = new Date();
@@ -188,7 +197,10 @@ const uploadContribution = async (req, res) => {
     });
 
     if (!academicYear) {
-      throw new Error("No academic year found for the current timestamp");
+      removeFile(files);
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "No academic year found",
+      });
     }
 
     const user = await prisma.user.findUnique({
@@ -196,7 +208,10 @@ const uploadContribution = async (req, res) => {
     });
 
     if (!user) {
-      throw new Error("User not found");
+      removeFile(files);
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "No user found",
+      });
     }
 
     const imageUploadPromises = [];
@@ -226,7 +241,6 @@ const uploadContribution = async (req, res) => {
         });
       }
     }
-
     await Promise.all([...imageUploadPromises, ...documentUploadPromises]);
 
     const contribution = {
@@ -252,8 +266,6 @@ const uploadContribution = async (req, res) => {
     });
   }
 };
-
-
 
 const viewMyContributions = async (req, res) => {
   try {
@@ -283,6 +295,11 @@ const viewMyContributions = async (req, res) => {
               final_closure_date: true,
             },
           },
+          Image: { 
+            select: {
+              path: true  
+            }
+          }
         },
         skip: offset,
         take: limit,
@@ -298,6 +315,35 @@ const viewMyContributions = async (req, res) => {
 
     res.status(StatusCodes.OK).json({
       contribution: allMyContributions,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(StatusCodes.BAD_GATEWAY).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const viewMyProfile = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: req.decodedPayload.data.email },
+    });
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
+
+    const userProfile = await prisma.user.findMany({
+      where: {
+        id: user.id,
+      },
+    });
+    
+    res.status(StatusCodes.OK).json({
+      userProfile
     });
   } catch (error) {
     console.error(error);
