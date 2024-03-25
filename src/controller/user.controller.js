@@ -165,9 +165,7 @@ const resetPassword = async (req, res) => {
 const uploadContribution = async (req, res) => {
   try {
     const { title, description } = req.body;
-    const images = req.files["image"];
-    const documents = req.files["document"];
-    const files = (!images && !documents) ? [] : (!images ? [...documents] : (!documents ? [...images] : [...images, ...documents])); 
+    const files = req.files["files"];
     if (!title) {
       removeFile(files);
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -182,7 +180,7 @@ const uploadContribution = async (req, res) => {
       });
     }
 
-    if (!images && !documents) {
+    if (!files) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         message: "No file is chosen",
       });
@@ -214,35 +212,27 @@ const uploadContribution = async (req, res) => {
       });
     }
 
-    const imageUploadPromises = [];
     const imageData = [];
-    if (images) {
-      for (const image of images) {
-        const imageRef = ref(storage, "images/" + image.originalname);
-        await uploadBytes(imageRef, image.buffer);
-        const downloadUrl = await getDownloadURL(imageRef);
-        imageData.push({
-          name: image.originalname,
-          path: downloadUrl,
-        });
-      }
-    }
-
-    const documentUploadPromises = [];
     const documentData = [];
-    if (documents) {
-      for (const document of documents) {
-        const documentRef = ref(storage, "documents/" + document.originalname);
-        await uploadBytes(documentRef, document.buffer);
-        const downloadUrl = await getDownloadURL(documentRef);
+
+    for (const file of files) {
+      console.log(file.filename)
+      const fileRef = ref(storage, `${file.fieldname}/${file.originalname}`);
+      await uploadBytes(fileRef, file.buffer);
+      const downloadUrl = await getDownloadURL(fileRef);
+    
+      if (file.filename.includes("image")) {  // Corrected line
+        imageData.push({
+          name: file.originalname,
+          path: downloadUrl,
+        });
+      } else if (file.filename.includes("document")) {
         documentData.push({
-          name: document.originalname,
+          name: file.originalname,
           path: downloadUrl,
         });
       }
-    }
-    await Promise.all([...imageUploadPromises, ...documentUploadPromises]);
-
+    } 
     const contribution = {
       title: title,
       description: description,
@@ -324,34 +314,6 @@ const viewMyContributions = async (req, res) => {
   }
 };
 
-const viewMyProfile = async (req, res) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { email: req.decodedPayload.data.email },
-    });
-
-    if (!user) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: "User not found",
-      });
-    }
-
-    const userProfile = await prisma.user.findMany({
-      where: {
-        id: user.id,
-      },
-    });
-    
-    res.status(StatusCodes.OK).json({
-      userProfile
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(StatusCodes.BAD_GATEWAY).json({
-      message: "Internal Server Error",
-    });
-  }
-};
 
 module.exports = {
   editUserProfile,

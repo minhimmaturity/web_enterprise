@@ -1,10 +1,11 @@
 const multer = require("multer");
 const path = require("path");
 var appRoot = require("app-root-path");
-const {StatusCodes} = require("http-status-codes");
+const { StatusCodes } = require("http-status-codes");
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    //filter image and document
+    // Filter image and document
     const imageExtensions = /\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF)$/;
     const documentExtensions = /\.(doc|DOC|pdf|PDF|txt|TXT|xls|xlsx|docx)$/;
 
@@ -17,21 +18,27 @@ const storage = multer.diskStorage({
       return cb(error);
     }
   },
-
-  // config file name
+  
+  // Configure filename
   filename: function (req, file, cb) {
-    cb(
-      null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-    );
+    if (file.fieldname === "files" && /\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF)$/.test(file.originalname)) {
+      cb(
+        null,
+        "image-" + Date.now() + path.extname(file.originalname)
+      );
+    } else {
+      cb(
+        null,
+        "document-"+ Date.now() + path.extname(file.originalname)
+      );
+    }
   },
 });
 
 const uploadMultipleFiles = multer({
   storage: storage,
 }).fields([
-  { name: "image", maxCount: 10 },
-  { name: "document", maxCount: 10 },
+  { name: "files", maxCount: 10 }
 ]);
 
 // Error handling middleware
