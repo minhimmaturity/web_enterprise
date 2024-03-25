@@ -10,6 +10,7 @@ const { StatusCodes } = require("http-status-codes");
 const { initializeApp } = require("firebase/app");
 const { getDownloadURL, ref, uploadBytes } = require("firebase/storage");
 const storage = require("../utils/firebase");
+const removeFile = require("../utils/remove-file");
 
 const changePassword = async (req, res) => {
   try {
@@ -164,19 +165,25 @@ const resetPassword = async (req, res) => {
 const uploadContribution = async (req, res) => {
   try {
     const { title, description } = req.body;
+    const files = req.files["files"];
     if (!title) {
-      throw new Error("Title is empty");
+      removeFile(files);
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Title is required",
+      });
     }
 
     if (!description) {
-      throw new Error("Description is empty");
+      removeFile(files);
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Description is required",
+      });
     }
 
-    const images = req.files["image"];
-    const documents = req.files["document"];
-
-    if (!images && !documents) {
-      throw new Error("No file is chosen");
+    if (!files) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "No file is chosen",
+      });
     }
 
     const currentTimestamp = new Date();
@@ -188,7 +195,10 @@ const uploadContribution = async (req, res) => {
     });
 
     if (!academicYear) {
-      throw new Error("No academic year found for the current timestamp");
+      removeFile(files);
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "No academic year found",
+      });
     }
 
     const user = await prisma.user.findUnique({
@@ -196,39 +206,33 @@ const uploadContribution = async (req, res) => {
     });
 
     if (!user) {
-      throw new Error("User not found");
+      removeFile(files);
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "No user found",
+      });
     }
 
-    const imageUploadPromises = [];
     const imageData = [];
-    if (images) {
-      for (const image of images) {
-        const imageRef = ref(storage, "images/" + image.originalname);
-        await uploadBytes(imageRef, image.buffer);
-        const downloadUrl = await getDownloadURL(imageRef);
-        imageData.push({
-          name: image.originalname,
-          path: downloadUrl,
-        });
-      }
-    }
-
-    const documentUploadPromises = [];
     const documentData = [];
-    if (documents) {
-      for (const document of documents) {
-        const documentRef = ref(storage, "documents/" + document.originalname);
-        await uploadBytes(documentRef, document.buffer);
-        const downloadUrl = await getDownloadURL(documentRef);
+
+    for (const file of files) {
+      console.log(file.filename)
+      const fileRef = ref(storage, `${file.fieldname}/${file.originalname}`);
+      await uploadBytes(fileRef, file.buffer);
+      const downloadUrl = await getDownloadURL(fileRef);
+    
+      if (file.filename.includes("image")) {  // Corrected line
+        imageData.push({
+          name: file.originalname,
+          path: downloadUrl,
+        });
+      } else if (file.filename.includes("document")) {
         documentData.push({
-          name: document.originalname,
+          name: file.originalname,
           path: downloadUrl,
         });
       }
-    }
-
-    await Promise.all([...imageUploadPromises, ...documentUploadPromises]);
-
+    } 
     const contribution = {
       title: title,
       description: description,
@@ -252,8 +256,6 @@ const uploadContribution = async (req, res) => {
     });
   }
 };
-
-
 
 const viewMyContributions = async (req, res) => {
   try {
@@ -283,6 +285,11 @@ const viewMyContributions = async (req, res) => {
               final_closure_date: true,
             },
           },
+          Image: { 
+            select: {
+              path: true  
+            }
+          }
         },
         skip: offset,
         take: limit,
@@ -306,6 +313,7 @@ const viewMyContributions = async (req, res) => {
     });
   }
 };
+
 
 module.exports = {
   editUserProfile,

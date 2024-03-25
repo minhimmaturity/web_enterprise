@@ -8,12 +8,11 @@ const {
   sentOtp,
   resetPassword,
   uploadContribution,
-  viewMyContributions,
+  viewMyContributions,viewMyProfile
 } = require("../../controller/user.controller");
 const {
-  uploadMultipleFiles,
-  handleUploadError,
-} = require("../../middleware/upload"); // Import the middleware
+  uploadMultipleFiles
+} = require("../../utils/upload"); // Import the middleware
 const user = Router();
 
 // Other routes...
@@ -25,9 +24,7 @@ user.put("/resetPassword", resetPassword);
 
 // Route for uploading submission with middleware
 user.post(
-  "/uploadContribution",
-  uploadMultipleFiles,
-  handleUploadError,
+  "/uploadContribution",uploadMultipleFiles,
   authMiddleware([Role.STUDENT]),
   uploadContribution
 );
