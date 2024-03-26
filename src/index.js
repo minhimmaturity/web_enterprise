@@ -5,6 +5,8 @@ const { PrismaClient } = require("@prisma/client");
 const auth = require("./route/user/auth.route");
 const admin = require("./route/user/admin.route");
 const user = require("./route/user/user.route");
+const manager = require("./route/user/manager.route");
+const coordinator = require("./route/user/coordinator.route");
 const bodyParser = require("body-parser");
 const hbs = require("hbs");
 const cors = require("cors");
@@ -55,6 +57,8 @@ const main = async () => {
     app.use("/user", user);
     app.use("/auth", auth);
     app.use("/admin", admin);
+    app.use("/manager", manager);
+    app.use("/coordinator", coordinator);
     io.on('connection', (socket) => {
       console.log('a user connected');
       socket.on('disconnect', () => {

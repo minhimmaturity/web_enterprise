@@ -14,3 +14,4 @@ coordinator.get(
     authMiddleware([Role.COORDIONATOR]),
     viewContribution
   );
+module.exports = coordinator;
