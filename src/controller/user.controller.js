@@ -288,6 +288,11 @@ const uploadContribution = async (req, res) => {
     }
 
     const { title, description } = req.body;
+    if (!title || !description) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Title and description are required",
+      });
+    }
     const newContribution = await prisma.contribution.create({
       data: {
         title: title,

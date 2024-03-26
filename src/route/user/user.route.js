@@ -12,6 +12,7 @@ const {
   // viewMyProfile,
 } = require("../../controller/user.controller");
 const { uploadMiddleware } = require("../../middleware/upload"); // Import the middleware
+const validate = require("../../middleware/validate");
 const user = Router();
 
 // Other routes...

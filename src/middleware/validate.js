@@ -81,7 +81,6 @@ let validateUpdateAcademicYear = () => {
   ];
 };
 
-
 const validateCreateAcademicYear = () => {
   return [
     // Validation rules for creating academic years
@@ -98,12 +97,20 @@ const validateCreateAcademicYear = () => {
   ];
 };
 
+const validateUploadContribution = () => {
+  return [
+    check("title").notEmpty().withMessage("Title is required"),
+    check("description").notEmpty().withMessage("Description is required"),
+  ];
+};
+
 let validate = {
   validateRegister: validateRegister,
   validateLogin: validateLogin,
   validateCreateAccountForUser: validateCreateAccountForUser,
   validateCreateAcademicYear: validateCreateAcademicYear,
   validateUpdateAcademicYear: validateUpdateAcademicYear,
+  validateUploadContribution: validateUploadContribution,
 };
 
 module.exports = validate;
