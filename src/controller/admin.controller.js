@@ -77,7 +77,6 @@ const createAccountForUser = async (req, res) => {
   }
 };
 
-
 const createAcademicYear = async (req, res) => {
   const { closure_date, final_closure_date } = req.body;
   try {
@@ -100,7 +99,6 @@ const createAcademicYear = async (req, res) => {
         message: "Admin not found",
       });
     }
-
 
     const academicYear = {
       closure_date,
@@ -149,7 +147,6 @@ const updateAcademicYear = async (req, res) => {
       });
     }
 
-
     const academicYear = await prisma.academicYear.update({
       where: { id: Id },
       data: { closure_date, final_closure_date },
@@ -190,7 +187,6 @@ const deleteAcademicYear = async (req, res) => {
         message: "Admin not found",
       });
     }
-
 
     await prisma.academicYear.delete({
       where: { id: Id },
@@ -246,8 +242,6 @@ const viewAcademicYears = async (req, res) => {
     });
   }
 };
-
-
 
 //FACULTY CRUD
 const createFaculty = async (req, res) => {
@@ -450,7 +444,7 @@ const editUserProfile = async (req, res) => {
   const { name, avatar, is_locked } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { id : Id } });
+    const user = await prisma.user.findUnique({ where: { id: Id } });
 
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -459,8 +453,8 @@ const editUserProfile = async (req, res) => {
     }
 
     const updatedUser = await prisma.user.update({
-      where: { id:Id },
-      data: { name, avatar, is_locked: is_locked === 'true' },
+      where: { id: Id },
+      data: { name, avatar, is_locked: is_locked === "true" },
     });
 
     res.status(StatusCodes.OK).json({
@@ -473,38 +467,38 @@ const editUserProfile = async (req, res) => {
       message: "Internal Server Error",
     });
   }
-}; 
+};
 
 const viewMyProfile = async (req, res) => {
   try {
-  const user = await prisma.user.findUnique({
-    where: { email: req.decodedPayload.data.email },
-  });
-
-  if (!user) {
-    return res.status(StatusCodes.NOT_FOUND).json({
-      message: "User not found",
+    const user = await prisma.user.findUnique({
+      where: { email: req.decodedPayload.data.email },
     });
-  }
 
-  const admin = await prisma.admin.findUnique({
-    where: { userId: user.id },
-  });
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
 
-  if (!admin) {
-    return res.status(StatusCodes.NOT_FOUND).json({
-      message: "Admin not found",
+    const admin = await prisma.admin.findUnique({
+      where: { userId: user.id },
     });
-  }
 
-  const userProfile = await prisma.user.findMany({
-    where: {
-      id: admin.userId,
-    },
-  });
-    
+    if (!admin) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "Admin not found",
+      });
+    }
+
+    const userProfile = await prisma.user.findMany({
+      where: {
+        id: admin.userId,
+      },
+    });
+
     res.status(StatusCodes.OK).json({
-      userProfile
+      userProfile,
     });
   } catch (error) {
     console.error(error);
@@ -525,5 +519,6 @@ module.exports = {
   deleteAcademicYear,
   viewAcademicYears,
   viewAllAccount,
-  editUserProfile,viewMyProfile
+  editUserProfile,
+  viewMyProfile,
 };
