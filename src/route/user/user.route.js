@@ -9,6 +9,7 @@ const {
   resetPassword,
   uploadContribution,
   viewMyContributions,
+  viewContributionDetail
   // viewMyProfile,
 } = require("../../controller/user.controller");
 const { uploadMiddleware } = require("../../middleware/upload"); // Import the middleware
@@ -35,5 +36,7 @@ user.get(
   authMiddleware([Role.STUDENT]),
   viewMyContributions
 );
+
+user.get("/viewMyContributions/:Id", authMiddleware([Role.STUDENT]), viewContributionDetail);
 
 module.exports = user;
