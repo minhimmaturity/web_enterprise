@@ -60,4 +60,24 @@ const viewContribution = async (req, res) => {
         });
       }
 }
-module.exports = {viewContribution}
+const chooseContribution = async (req,res) => {
+  const { Id } = req.params;
+
+  try {
+    const chosenContribution = await prisma.contribution.update({
+      where: { id: Id },
+      data: {  is_choosen: true },
+    });
+
+    res.status(StatusCodes.OK).json({
+      message: "Choose contribution successfully",
+      chosenContribution,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(StatusCodes.BAD_GATEWAY).json({
+      message: "Internal Server Error",
+    });
+  }
+}
+module.exports = {viewContribution,chooseContribution}
