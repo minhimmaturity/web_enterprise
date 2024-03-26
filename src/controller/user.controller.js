@@ -378,6 +378,36 @@ const viewContributionDetail = async (req, res) => {
     });
   }
 };
+
+const viewMyProfile = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: req.decodedPayload.data.email },
+    });
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
+
+    const userProfile = await prisma.user.findFirst({
+      where: {
+        id: user.id,
+      },
+    });
+
+    res.status(StatusCodes.OK).json({
+      userProfile,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(StatusCodes.BAD_GATEWAY).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
 module.exports = {
   editUserProfile,
   changePassword,
@@ -385,5 +415,6 @@ module.exports = {
   resetPassword,
   uploadContribution,
   viewMyContributions,
-  viewContributionDetail
+  viewContributionDetail,
+  viewMyProfile
 };
