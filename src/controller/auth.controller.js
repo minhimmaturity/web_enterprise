@@ -199,6 +199,7 @@ const login = async (req, res) => {
     // Send the tokens back to the client
     res.status(StatusCodes.OK).json({
       message: "Login successful",
+      role: user.role,
       token: token,
       refreshToken: refreshToken,
     });

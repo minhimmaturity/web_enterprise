@@ -421,7 +421,12 @@ const viewAllAccount = async (req, res) => {
         };
       }
 
-      const academicYears = await prisma.user.findMany(queryOptions);
+      const academicYears = await prisma.user.findMany({
+        ...queryOptions,
+        orderBy: {
+          createAt: 'desc' // or 'desc' for descending order
+        }
+      });
 
       if (academicYears.length === 0) {
         // No more documents left to fetch
