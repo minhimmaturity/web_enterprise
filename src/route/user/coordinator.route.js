@@ -20,4 +20,6 @@ coordinator.put(
   authMiddleware([Role.COORDIONATOR]),
   chooseContribution
 );
+
+
 module.exports = coordinator;

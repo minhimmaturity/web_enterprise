@@ -63,15 +63,25 @@ const changePassword = async (req, res) => {
 
 const editUserProfile = async (req, res) => {
   try {
-    const { name, email, avatar } = req.body;
+    const existingUser = await prisma.user.findUnique({
+      where: { email: req.decodedPayload.data.email },
+    });
 
-    const user = await prisma.user.findUnique({
+    if (!existingUser) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
+
+    const { name, avatar } = req.body;
+
+    const userToUpdate = await prisma.user.findUnique({
       where: {
-        email,
+        email: req.decodedPayload.data.email, // Use email as the unique identifier
       },
     });
 
-    if (!user) {
+    if (!userToUpdate) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
@@ -79,7 +89,7 @@ const editUserProfile = async (req, res) => {
 
     const updatedUser = await prisma.user.update({
       where: {
-        email,
+        email: req.decodedPayload.data.email, // Use email as the unique identifier
       },
       data: {
         name,
@@ -98,6 +108,7 @@ const editUserProfile = async (req, res) => {
     });
   }
 };
+
 
 const sentOtp = async (req, res) => {
   const { email } = req.body;

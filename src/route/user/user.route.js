@@ -18,7 +18,7 @@ const user = Router();
 
 // Other routes...
 
-user.put("/editProfile", editUserProfile);
+user.put("/editProfile",authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]), editUserProfile);
 user.put("/changePassword", changePassword);
 user.post("/otp", sentOtp);
 user.put("/resetPassword", resetPassword);

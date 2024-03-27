@@ -81,4 +81,64 @@ const getContributionPercentageByFaculty = async (req, res) => {
     }
 };
 
-module.exports = { getContributionsStatsByFacultyAndYear, getContributionPercentageByFaculty };
+
+const chooseContribution = async (req, res) => {
+    const { Id } = req.params;
+
+    try {
+        const contribution = await prisma.contribution.update({
+            where: { id: Id },
+            data: { is_choosen: true },
+        });
+
+        res.status(StatusCodes.OK).json({ message: 'Contribution has been chosen.' }, contribution);
+    } catch (error) {
+        console.error('Error choosing contribution:', error);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to choose contribution.' });
+    }
+};
+
+const publishContribution = async (req, res) => {
+    const { Id } = req.params;
+
+    try {
+        const contribution = await prisma.contribution.update({
+            where: { id: Id },
+            data: { is_public: true }, 
+        });
+
+        res.status(StatusCodes.OK).json({ message: 'Contribution has been published.', contribution});
+    } catch (error) {
+        console.error('Error publishing contribution:', error);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to publish contribution.' });
+    }
+};
+
+
+const getChosenContributions = async (req, res) => {
+    try {
+        const chosenContributions = await prisma.contribution.findMany({
+            where: {
+                is_choosen: true
+            },
+            include: {
+                user: true,
+                AcademicYear: true
+            }
+        });
+
+        res.status(StatusCodes.OK).json(chosenContributions);
+    } catch (error) {
+        console.error('Error fetching chosen contributions:', error);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to fetch chosen contributions.' });
+    }
+};
+
+module.exports = { 
+    getContributionsStatsByFacultyAndYear, 
+    getContributionPercentageByFaculty, 
+    chooseContribution, 
+    publishContribution,
+    getChosenContributions
+};
+

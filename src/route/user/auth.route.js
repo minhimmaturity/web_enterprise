@@ -4,7 +4,7 @@ const {
   register,
   login,
   authToken,
-  refreshAccessToken,
+  refreshToken,
   editUserProfile,
 } = require("../../controller/auth.controller");
 const { validationResult } = require("express-validator");
@@ -20,9 +20,9 @@ auth.get("/public", (req, res) => {
 });
 // auth.put('/editProfile', editUserProfile);
 
-auth.get("/private", refreshAccessToken, (req, res) => {
-  res.json(privatePosts);
-});
+// auth.get("/private", refreshAccessToken, (req, res) => {
+//   res.json(privatePosts);
+// });
 auth.get("/private1", authToken, (req, res) => {
   res.json(privatePosts);
 });

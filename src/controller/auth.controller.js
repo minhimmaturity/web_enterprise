@@ -56,10 +56,10 @@ const generateAccessToken = async (name, email, role) => {
     const token = jwt.sign(
       { data: { name, email, role } },
       process.env.SECRET_KEY,
-      { expiresIn: "3d" }
+      { expiresIn: "30s" }
     );
 
-    await redisClient.setEx("token" + " " + email, 60 * 60 * 24 * 3, token);
+    await redisClient.setEx("token" + " " + email, 30, token);
 
     return token; // Return the token here
   } catch (error) {
@@ -124,48 +124,27 @@ const authToken = async (req, res, next) => {
   }
 };
 
-const refreshAccessToken = async (req, res, next) => {
-  const refreshToken = req.header("x-refresh-token");
-
-  if (!refreshToken) {
-    return res.status(401).json({
-      errors: [
-        {
-          msg: "Refresh token not found",
-        },
-      ],
-    });
-  }
-
+const refreshToken = async (token, res, req, next) => {
   try {
-    const user = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
-    const accessToken = jwt.sign({ data: user.data }, process.env.SECRET_KEY, {
-      expiresIn: "20s",
-    });
-    await redisClient.setEx(
-      "accessToken" + " " + user.data.email,
-      20,
-      accessToken
-    );
-    res.json({ accessToken });
-  } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      return res.status(403).json({
-        errors: [
-          {
-            msg: "Expired refresh token",
-          },
-        ],
+    const userInfo = jwt.decode(token, process.env.SECRET_KEY);
+    console.log(userInfo);
+    const refreshToken = await redisClient.get("refreshToken" + " " + userInfo.data.email);
+    console.log(userInfo.data.email);
+    try {
+      const refreshedUser = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
+      const newAccessToken = jwt.sign({ data: refreshedUser.data }, process.env.SECRET_KEY, {
+        expiresIn: "3d",
       });
-    } else if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(403).json({
-        errors: [
-          {
-            msg: "Invalid refresh token",
-          },
-        ],
-      });
+      await redisClient.setEx("accessToken" + " " + refreshedUser.data.email, 60*60*24*3 , newAccessToken);
+      req.decodedPayload = refreshedUser;
+      return next();
+    } catch (refreshError) {
+      console.error('Error refreshing token:', refreshError);
+      return res.status(403).json({ error: 'Error refreshing token' });
     }
+  } catch (error) {
+    console.error('Error verifying access token:', error);
+    return res.status(403).json({ error: 'Invalid access token' });
   }
 };
 
@@ -216,6 +195,6 @@ module.exports = {
   login,
   generateAccessToken,
   generateRefreshToken,
-  refreshAccessToken,
+  refreshToken,
   authToken,
 };
