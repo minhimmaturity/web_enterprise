@@ -82,21 +82,6 @@ const getContributionPercentageByFaculty = async (req, res) => {
 };
 
 
-const chooseContribution = async (req, res) => {
-    const { Id } = req.params;
-
-    try {
-        const contribution = await prisma.contribution.update({
-            where: { id: Id },
-            data: { is_choosen: true },
-        });
-
-        res.status(StatusCodes.OK).json({ message: 'Contribution has been chosen.' }, contribution);
-    } catch (error) {
-        console.error('Error choosing contribution:', error);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to choose contribution.' });
-    }
-};
 
 const publishContribution = async (req, res) => {
     const { Id } = req.params;
@@ -137,7 +122,6 @@ const getChosenContributions = async (req, res) => {
 module.exports = { 
     getContributionsStatsByFacultyAndYear, 
     getContributionPercentageByFaculty, 
-    chooseContribution, 
     publishContribution,
     getChosenContributions
 };

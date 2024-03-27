@@ -27,11 +27,6 @@ manager.get(
 );
 
 manager.put(
-    "/chooseContribution/:Id", // Add colon before "Id"
-    chooseContribution
-);
-
-manager.put(
     "/publishContribution/:Id", // Add colon before "Id"
     publishContribution
 );
