@@ -341,7 +341,7 @@ const sendNotification = async (contributionId, userId, content) => {
     // Send email notifications to coordinators
     const notificationContent = `A new contribution has been added: "${content}"`;
     coordinators.forEach(async (coordinator) => {
-      await sendMailToCoordinator(coordinator.email, notificationContent);
+      await sendMailToCoordinator2(coordinator.email, notificationContent);
     });
 
     console.log(`Notification sent: ${content}`);

@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { StatusCodes } = require('http-status-codes');
 const prisma = new PrismaClient();
+const { sendMailToCoordinator2, sendMailToStudent } = require("../utils/mail-service")
 
 const getContributionsStatsByFacultyAndYear = async (req, res) => {
     try {
@@ -73,7 +74,7 @@ const getContributionPercentageByFaculty = async (req, res) => {
             const percentage = (contributionCount / totalContributions) * 100;
             contributionPercentageByFaculty[facultyName] = percentage.toFixed(2);
         });
-    
+
         return res.status(StatusCodes.OK).json(contributionPercentageByFaculty);
     } catch (error) {
         console.error('Error fetching contribution percentage by faculty:', error);
@@ -90,8 +91,17 @@ const publishContribution = async (req, res) => {
         // Fetch the contribution
         const contribution = await prisma.contribution.findUnique({
             where: { id: Id },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        FacultyId: true,
+                    },
+                },
+            },
         });
-
         // Check if the contribution exists
         if (!contribution) {
             return res.status(StatusCodes.NOT_FOUND).json({ error: 'Contribution not found.' });
@@ -105,8 +115,39 @@ const publishContribution = async (req, res) => {
         // Update the contribution
         const updatedContribution = await prisma.contribution.update({
             where: { id: Id },
-            data: { is_public: true }, 
+            data: { is_public: true },
         });
+
+        // Get the user's email associated with the contribution
+        const userEmail = contribution.user.email;
+        const userName = contribution.user.name;
+        console.log(userName)
+
+
+        studentNotificationContent = `Your contribution titled "${updatedContribution.title}" has been published.`;
+        await sendMailToStudent(userName, userEmail, studentNotificationContent);
+        console.log(userEmail)
+
+        // Send notification email to coordinators
+        const coordinatorNotificationContent = `A contribution titled "${updatedContribution.title}" by ${contribution.user.name} has been published.`;
+        const coordinators = await prisma.user.findMany({
+            where: {
+                FacultyId: contribution.user.FacultyId,
+                role: "COORDIONATOR",
+            },
+            select: { email: true },
+        });
+        coordinators.forEach(async (coordinator) => {
+            await sendMailToCoordinator2(coordinator.email, coordinatorNotificationContent);
+        });
+
+        // await prisma.notification.create({
+        //     data: {
+        //         content: studentNotificationContent,
+        //         contributionId: contribution.id,
+        //         userId: updatedContribution.userId,
+        //     },
+        // });
 
         res.status(StatusCodes.OK).json({ message: 'Contribution has been published.', contribution: updatedContribution });
     } catch (error) {
@@ -136,9 +177,9 @@ const getChosenContributions = async (req, res) => {
     }
 };
 
-module.exports = { 
-    getContributionsStatsByFacultyAndYear, 
-    getContributionPercentageByFaculty, 
+module.exports = {
+    getContributionsStatsByFacultyAndYear,
+    getContributionPercentageByFaculty,
     publishContribution,
     getChosenContributions
 };

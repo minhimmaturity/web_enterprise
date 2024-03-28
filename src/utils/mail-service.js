@@ -47,6 +47,37 @@ const sendMailToCoordinator = async (email, content) => {
   }
 };
 
+const sendMailToCoordinator2 = async (email, content) => {
+  try {
+    // Resolve the path to the template file
+    const templatePath = path.resolve(__dirname, "../../mail/coordinatorTemplate.hbs");
+
+    // Read the HTML template file
+    const htmlTemplate = fs.readFileSync(templatePath, "utf8");
+    const template = hbs.compile(htmlTemplate);
+
+    const compiledHTML = template({
+      content: content,
+    });
+
+    const mailOptions = {
+      from: "trantanminh0603@gmail.com",
+      to: email,
+      subject: "do not reply",
+      html: compiledHTML,
+    };
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email sent: " + info.response);
+      }
+    });
+  } catch (error) {
+    console.error("Error sending email to coordinator:", error);
+  }
+};
+
 
 
 const sendMailToManager = async (email, content) => {
@@ -112,6 +143,40 @@ const sendMailToUser = async (email, password, name) => {
     }
   });
 };
+const sendMailToStudent = async (username, email, content) => {
+  try {
+      // Resolve the path to the template file
+      const templatePath = path.resolve(__dirname, "../../mail/Student.hbs");
+
+      // Read the HTML template file
+      const htmlTemplate = fs.readFileSync(templatePath, "utf8");
+      const template = hbs.compile(htmlTemplate);
+
+      const compiledHTML = template({
+         username:username,
+          content: content,
+      });
+
+      const mailOptions = {
+          from: "trantanminh0603@gmail.com",
+          to: email,
+          subject: "Contribution Published",
+          html: compiledHTML,
+      };
+
+      // Send email using Nodemailer transporter
+      transporter.sendMail(mailOptions, function (error, info) {
+          if (error) {
+              console.log(error);
+          } else {
+              console.log("Email sent to student: " + info.response);
+          }
+      });
+  } catch (error) {
+      console.error("Error sending email to student:", error);
+  }
+};
+
 
 const sendMailResetPassword = async (email) => {
   const token = otpGenerator.generate(6, {
@@ -148,4 +213,4 @@ const sendMailResetPassword = async (email) => {
   });
 };
 
-module.exports = { sendMailToUser, sendMailResetPassword , sendMailToCoordinator, sendMailToManager};
+module.exports = { sendMailToUser, sendMailResetPassword , sendMailToCoordinator, sendMailToManager, sendMailToCoordinator2, sendMailToStudent};
