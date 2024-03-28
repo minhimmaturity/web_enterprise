@@ -385,6 +385,10 @@ const viewContributionDetail = async (req, res) => {
     const image = await prisma.image.findMany({
       where: { contributionId: contributions.id },
     });
+    
+    const comment = await prisma.comment.findMany({
+      where: { contributionId: contributions.id },
+    })
 
     res.status(StatusCodes.OK).json({
       message: "View details successfully",
@@ -393,10 +397,19 @@ const viewContributionDetail = async (req, res) => {
         closure_date: academicYear.closure_date,
         final_closure_date: academicYear.final_closure_date,
       },
-      document: document,
+      document: document.map(( document)=>{
+        return {
+          name: document.name,
+        }
+      }),
       image: image.map((image) => {
         return {
           name: image.name,
+        };
+      }),
+      comment: comment.map((comment) => {
+        return {
+          content: comment.content,
         };
       }),
     });
