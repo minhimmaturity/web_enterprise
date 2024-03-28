@@ -10,9 +10,9 @@ const coordinator = require("./route/user/coordinator.route");
 const bodyParser = require("body-parser");
 const hbs = require("hbs");
 const cors = require("cors");
-const { createServer } = require('http');
-const { Server } = require('socket.io');
-const { join } = require('path');
+const { createServer } = require("http");
+const { Server } = require("socket.io");
+const { join } = require("path");
 
 dotenv.config();
 
@@ -25,8 +25,8 @@ const io = new Server(server);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {
-  res.sendFile(join(__dirname, 'index.html'));
+app.get("/", (req, res) => {
+  res.sendFile(join(__dirname, "index.html"));
 });
 
 app.use(
@@ -59,10 +59,11 @@ const main = async () => {
     app.use("/admin", admin);
     app.use("/manager", manager);
     app.use("/coordinator", coordinator);
-    io.on('connection', (socket) => {
-      console.log('a user connected');
-      socket.on('disconnect', () => {
-        console.log('user disconnected');
+    io.on("connection", function (socket) {
+      console.log("Welcome to server chat");
+
+      socket.on("send", function (data) {
+        io.sockets.emit("send", data);
       });
     });
     app.listen(PORT, () => {

@@ -14,11 +14,17 @@ const {
 } = require("../../controller/user.controller");
 const { uploadMiddleware } = require("../../middleware/upload"); // Import the middleware
 const validate = require("../../middleware/validate");
+const checkDefaultPassword = require("../../middleware/checkDefaultPassword");
 const user = Router();
 
 // Other routes...
 
-user.put("/editProfile",authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]), editUserProfile);
+user.put(
+  "/editProfile",
+  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]),
+  checkDefaultPassword,
+  editUserProfile
+);
 user.put("/changePassword", changePassword);
 user.post("/otp", sentOtp);
 user.put("/resetPassword", resetPassword);
@@ -28,20 +34,28 @@ user.post(
   "/uploadContribution",
   uploadMiddleware,
   authMiddleware([Role.STUDENT]),
+  checkDefaultPassword,
   uploadContribution
 );
 
 user.get(
   "/viewMyContributions",
   authMiddleware([Role.STUDENT]),
+  checkDefaultPassword,
   viewMyContributions
 );
 
-user.get("/viewMyContributions/:Id", authMiddleware([Role.STUDENT]), viewContributionDetail);
+user.get(
+  "/viewMyContributions/:Id",
+  authMiddleware([Role.STUDENT]),
+  checkDefaultPassword,
+  viewContributionDetail
+);
 
 user.get(
   "/viewProfile",
-  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]), 
+  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]),
+  checkDefaultPassword,
   viewMyProfile
 );
 

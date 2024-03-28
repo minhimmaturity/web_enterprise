@@ -104,7 +104,7 @@ model Contribution {
   AcademicYearId String
   Comment        Comment[]
   AcademicYear   AcademicYear  @relation(fields: [AcademicYearId], references: [id], onDelete: Cascade)
-  user           User          @relation(fields: [userId], references: [id])
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   Documents      Documents[]
   Image          Image[]
   Notification   Notification?
@@ -136,7 +136,7 @@ model Documents {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   contributionId String
-  contribution   Contribution @relation(fields: [contributionId], references: [id])
+  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
 }
 
 model Comment {

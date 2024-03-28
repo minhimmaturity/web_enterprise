@@ -3,16 +3,9 @@ const bcrypt = require("bcrypt");
 const { sendMailResetPassword } = require("../utils/mail-service");
 const redisClient = require("../utils/connectRedis");
 const hashPassword = require("../utils/hashPassword");
-const jwt = require("jsonwebtoken");
-const fs = require("fs");
 const prisma = new PrismaClient();
 const { StatusCodes } = require("http-status-codes");
-const { initializeApp } = require("firebase/app");
-const { getDownloadURL, ref, uploadBytes } = require("firebase/storage");
-const storage = require("../utils/firebase");
 const bucket = require("../utils/firebase");
-const streamifier = require("streamifier");
-const concat = require("concat-stream");
 
 const changePassword = async (req, res) => {
   try {
@@ -200,7 +193,7 @@ const uploadContribution = async (req, res) => {
         message: "No user found",
       });
     }
-    
+
     const { title, description } = req.body;
     if (!title || !description) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -224,70 +217,74 @@ const uploadContribution = async (req, res) => {
     }
 
     // Upload documents to Firebase Storage
-    if (files.filter(file => file.mimetype.includes("application"))) {
-      const documentUploadPromises = files.filter(file => file.mimetype.includes("application")).map(async (file) => {
-        const filePath = `documents/${newContribution.id}/${file.originalname}`;
-        const blob = bucket.file(filePath);
+    if (files.filter((file) => file.mimetype.includes("application"))) {
+      const documentUploadPromises = files
+        .filter((file) => file.mimetype.includes("application"))
+        .map(async (file) => {
+          const filePath = `documents/${newContribution.id}/${file.originalname}`;
+          const blob = bucket.file(filePath);
 
-        // Upload file to Firebase Storage
-        await blob.save(file.buffer, {
-          metadata: {
-            contentType: file.mimetype,
-          },
+          // Upload file to Firebase Storage
+          await blob.save(file.buffer, {
+            metadata: {
+              contentType: file.mimetype,
+            },
+          });
+
+          // Get download URL for the document
+          const [documentUrl] = await blob.getSignedUrl({
+            action: "read",
+            expires: "03-17-2025",
+          });
+
+          // Save document URL to database
+          await prisma.documents.create({
+            data: {
+              name: file.originalname,
+              path: documentUrl,
+              contributionId: newContribution.id,
+            },
+          });
+
+          return documentUrl;
         });
-
-        // Get download URL for the document
-        const [documentUrl] = await blob.getSignedUrl({
-          action: "read",
-          expires: "03-17-2025",
-        });
-
-        // Save document URL to database
-        await prisma.documents.create({
-          data: {
-            name: file.originalname,
-            path: documentUrl,
-            contributionId: newContribution.id,
-          },
-        });
-
-        return documentUrl;
-      });
 
       // Wait for all document upload promises to resolve
       await Promise.all(documentUploadPromises);
     }
 
     // Upload images to Firebase Storage
-    if (files.filter(file => file.mimetype.includes("image"))) {
-      const imageUploadPromises = files.filter(file => file.mimetype.includes("image")).map(async (file) => {
-        const filePath = `images/${newContribution.id}/${file.originalname}`;
-        const blob = bucket.file(filePath);
+    if (files.filter((file) => file.mimetype.includes("image"))) {
+      const imageUploadPromises = files
+        .filter((file) => file.mimetype.includes("image"))
+        .map(async (file) => {
+          const filePath = `images/${newContribution.id}/${file.originalname}`;
+          const blob = bucket.file(filePath);
 
-        // Upload file to Firebase Storage
-        await blob.save(file.buffer, {
-          metadata: {
-            contentType: file.mimetype,
-          },
+          // Upload file to Firebase Storage
+          await blob.save(file.buffer, {
+            metadata: {
+              contentType: file.mimetype,
+            },
+          });
+
+          // Get download URL for the image
+          const [imageUrl] = await blob.getSignedUrl({
+            action: "read",
+            expires: "03-17-2025",
+          });
+
+          // Save image URL to database
+          await prisma.image.create({
+            data: {
+              name: file.originalname,
+              path: imageUrl,
+              contributionId: newContribution.id,
+            },
+          });
+
+          return imageUrl;
         });
-
-        // Get download URL for the image
-        const [imageUrl] = await blob.getSignedUrl({
-          action: "read",
-          expires: "03-17-2025",
-        });
-
-        // Save image URL to database
-        await prisma.image.create({
-          data: {
-            name: file.originalname,
-            path: imageUrl,
-            contributionId: newContribution.id,
-          },
-        });
-
-        return imageUrl;
-      });
 
       // Wait for all image upload promises to resolve
       await Promise.all(imageUploadPromises);
@@ -427,5 +424,5 @@ module.exports = {
   uploadContribution,
   viewMyContributions,
   viewContributionDetail,
-  viewMyProfile
+  viewMyProfile,
 };

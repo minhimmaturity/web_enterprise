@@ -9,17 +9,19 @@ const {
   viewContribution,
   chooseContribution,
 } = require("../../controller/coordinator.controller");
+const checkDefaultPassword = require("../../middleware/checkDefaultPassword");
 coordinator.use(express.json());
 coordinator.get(
   "/viewContribution",
   authMiddleware([Role.COORDIONATOR]),
+  checkDefaultPassword,
   viewContribution
 );
 coordinator.put(
   "/chooseContribution/:Id",
   authMiddleware([Role.COORDIONATOR]),
+  checkDefaultPassword,
   chooseContribution
 );
-
 
 module.exports = coordinator;
