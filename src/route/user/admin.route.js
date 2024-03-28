@@ -70,7 +70,7 @@ admin.get("/viewFaculties", authMiddleware([Role.ADMIN]), viewFaculties); //chun
 //Users
 admin.get("/viewAllAccount", authMiddleware([Role.ADMIN]), viewAllAccount);
 admin.put("/editUser/:Id", authMiddleware([Role.ADMIN]), editUserProfile);
-user.get(
+admin.get(
   "/viewProfile",
   authMiddleware([Role.ADMIN]),
   checkDefaultPassword,
