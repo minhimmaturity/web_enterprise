@@ -15,24 +15,29 @@ const manager = Router();
 
 manager.get(
   "/getContributionsStatsByFacultyAndYear",
+  authMiddleware([Role.STUDENT]),
   checkDefaultPassword,
   getContributionsStatsByFacultyAndYear
 );
 
 manager.get(
   "/getContributionPercentageByFaculty",
+  authMiddleware([Role.STUDENT]),
   checkDefaultPassword,
   getContributionPercentageByFaculty
 );
 
 manager.get(
-  "/getChosenContributions", // Remove the extra space
+  "/getChosenContributions", 
+  authMiddleware([Role.STUDENT]),// Remove the extra space
   checkDefaultPassword,
   getChosenContributions
 );
 
 manager.put(
-  "/publishContribution/:Id", // Add colon before "Id"
+  "/publishContribution/:Id",
+  authMiddleware([Role.STUDENT]),
+   // Add colon before "Id"
   checkDefaultPassword,
   publishContribution
 );

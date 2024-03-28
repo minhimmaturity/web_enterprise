@@ -87,17 +87,34 @@ const publishContribution = async (req, res) => {
     const { Id } = req.params;
 
     try {
-        const contribution = await prisma.contribution.update({
+        // Fetch the contribution
+        const contribution = await prisma.contribution.findUnique({
+            where: { id: Id },
+        });
+
+        // Check if the contribution exists
+        if (!contribution) {
+            return res.status(StatusCodes.NOT_FOUND).json({ error: 'Contribution not found.' });
+        }
+
+        // Check if is_choosen is false
+        if (contribution.is_choosen === false) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'Cannot publish contribution because it is not chosen.' });
+        }
+
+        // Update the contribution
+        const updatedContribution = await prisma.contribution.update({
             where: { id: Id },
             data: { is_public: true }, 
         });
 
-        res.status(StatusCodes.OK).json({ message: 'Contribution has been published.', contribution});
+        res.status(StatusCodes.OK).json({ message: 'Contribution has been published.', contribution: updatedContribution });
     } catch (error) {
         console.error('Error publishing contribution:', error);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to publish contribution.' });
     }
 };
+
 
 
 const getChosenContributions = async (req, res) => {
