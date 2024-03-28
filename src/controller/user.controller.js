@@ -6,7 +6,7 @@ const hashPassword = require("../utils/hashPassword");
 const prisma = new PrismaClient();
 const { StatusCodes } = require("http-status-codes");
 const bucket = require("../utils/firebase");
-
+const {sendMailToCoordinator }= require("../utils/mail-service")
 const changePassword = async (req, res) => {
   try {
     const { email, oldPassword, newPassword } = req.body;
@@ -288,6 +288,18 @@ const uploadContribution = async (req, res) => {
       // Wait for all image upload promises to resolve
       await Promise.all(imageUploadPromises);
     }
+    // Send notification to users
+    const usersToNotify = await prisma.user.findMany({
+      where: {
+        NOT: { id: user.id }, // Exclude the user who uploaded the contribution
+        role: { not: "ADMIN" }, // You can adjust this condition as needed
+      },
+    });
+
+    const notificationContent = `A new contribution titled "${title}" has been added.`;
+   
+      await sendNotification(newContribution.id, user.id, notificationContent);
+  
 
     res
       .status(StatusCodes.OK)
@@ -299,6 +311,45 @@ const uploadContribution = async (req, res) => {
       .json({ error: error.message });
   }
 };
+
+const sendNotification = async (contributionId, userId, content) => {
+  try {
+    // Save the notification to the database
+    const newNotification = await prisma.notification.create({
+      data: {
+        content: content,
+        contributionId: contributionId,
+        userId: userId,
+      },
+    });
+
+    // Fetch user's faculty ID
+    const userFaculty = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { FacultyId: true },
+    });
+
+    // Fetch coordinators of the user's faculty
+    const coordinators = await prisma.user.findMany({
+      where: {
+        FacultyId: userFaculty.FacultyId,
+        role: "COORDIONATOR",
+      },
+      select: { email: true },
+    });
+
+    // Send email notifications to coordinators
+    const notificationContent = `A new contribution has been added: "${content}"`;
+    coordinators.forEach(async (coordinator) => {
+      await sendMailToCoordinator(coordinator.email, notificationContent);
+    });
+
+    console.log(`Notification sent: ${content}`);
+  } catch (error) {
+    console.error("Error sending notification:", error);
+  }
+};
+
 
 const viewMyContributions = async (req, res) => {
   try {

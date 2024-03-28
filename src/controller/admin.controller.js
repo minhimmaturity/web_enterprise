@@ -55,7 +55,7 @@ const createAccountForUser = async (req, res) => {
         role: Role.MANAGER,
         default_pasword: passwordAfterHash,
         avatar,
-        FacultyId: null,
+        FacultyId: faculty,
       };
     }
 
