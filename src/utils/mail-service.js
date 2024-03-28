@@ -47,6 +47,41 @@ const sendMailToCoordinator = async (email, content) => {
   }
 };
 
+
+
+const sendMailToManager = async (email, content) => {
+  try {
+    // Resolve the path to the template file
+    const templatePath = path.resolve(__dirname, "../../mail/managerTemplate.hbs");
+
+    // Read the HTML template file
+    const htmlTemplate = fs.readFileSync(templatePath, "utf8");
+    const template = hbs.compile(htmlTemplate);
+
+    const compiledHTML = template({
+      content: content,
+    });
+
+    const mailOptions = {
+      from: "trantanminh0603@gmail.com",
+      to: email,
+      subject: "do not reply",
+      html: compiledHTML,
+    };
+
+    // Send email using Nodemailer transporter
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email sent: " + info.response);
+      }
+    });
+  } catch (error) {
+    console.error("Error sending email to manager:", error);
+  }
+};
+
 const sendMailToUser = async (email, password, name) => {
   // Resolve the path to the template file
   const templatePath = path.resolve(__dirname, "../../mail/template.hbs");
@@ -113,4 +148,4 @@ const sendMailResetPassword = async (email) => {
   });
 };
 
-module.exports = { sendMailToUser, sendMailResetPassword , sendMailToCoordinator};
+module.exports = { sendMailToUser, sendMailResetPassword , sendMailToCoordinator, sendMailToManager};
