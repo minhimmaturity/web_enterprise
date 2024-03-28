@@ -12,34 +12,30 @@ const hbs = require("hbs");
 const cors = require("cors");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const { join } = require("path");
 
 dotenv.config();
 
 const app = express();
 app.use(morgan("combined"));
 const prisma = new PrismaClient();
-const server = createServer(app);
-const io = new Server(server);
-
+const httpServer = createServer(app); // Attach Express app to HTTP server
+const io = new Server(httpServer, {
+  /* options */
+});
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get("/", (req, res) => {
-  res.sendFile(join(__dirname, "index.html"));
-});
-
 app.use(
   cors({
-    origin: true, // Set it to true to allow all origins or provide a specific origin or an array of origins
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed HTTP methods
+    origin: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Origin",
       "X-Requested-With",
       "Content-Type",
       "Accept",
       "Authorization",
-    ], // Allowed request headers
+    ],
   })
 );
 app.set("view engine", "hbs");
@@ -59,14 +55,10 @@ const main = async () => {
     app.use("/admin", admin);
     app.use("/manager", manager);
     app.use("/coordinator", coordinator);
-    io.on("connection", function (socket) {
-      console.log("Welcome to server chat");
-
-      socket.on("send", function (data) {
-        io.sockets.emit("send", data);
-      });
+    io.on("connection", (socket) => {
+      console.log("Socket connected:", socket.id);
     });
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log(`Server is starting at http://${HOST}:${PORT}`);
     });
   } catch (error) {
@@ -76,9 +68,4 @@ const main = async () => {
   }
 };
 
-try {
-  main();
-} catch (e) {
-  console.error(e);
-  process.exit(1);
-}
+main().catch(console.error);

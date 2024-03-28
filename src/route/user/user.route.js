@@ -54,7 +54,7 @@ user.get(
 
 user.get(
   "/viewProfile",
-  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]),
+  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER]),
   checkDefaultPassword,
   viewMyProfile
 );
