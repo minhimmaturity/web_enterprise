@@ -102,7 +102,6 @@ const editUserProfile = async (req, res) => {
   }
 };
 
-
 const sentOtp = async (req, res) => {
   const { email } = req.body;
 
@@ -375,9 +374,31 @@ const viewContributionDetail = async (req, res) => {
       where: { id: Id },
     });
 
+    const academicYear = await prisma.academicYear.findFirst({
+      where: { id: contributions.AcademicYearId },
+    });
+
+    const document = await prisma.documents.findMany({
+      where: { contributionId: contributions.id },
+    });
+
+    const image = await prisma.image.findMany({
+      where: { contributionId: contributions.id },
+    });
+
     res.status(StatusCodes.OK).json({
       message: "View details successfully",
-      contributions,
+      contribution: contributions,
+      academicYear: {
+        closure_date: academicYear.closure_date,
+        final_closure_date: academicYear.final_closure_date,
+      },
+      document: document,
+      image: image.map((image) => {
+        return {
+          name: image.name,
+        };
+      }),
     });
   } catch (error) {
     console.error(error);
