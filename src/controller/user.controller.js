@@ -5,8 +5,9 @@ const redisClient = require("../utils/connectRedis");
 const hashPassword = require("../utils/hashPassword");
 const prisma = new PrismaClient();
 const { StatusCodes } = require("http-status-codes");
-const bucket = require("../utils/firebase");
-const {sendMailToCoordinator }= require("../utils/mail-service")
+const { storage } = require("../utils/firebase");
+const bucket = storage;
+const { sendMailToCoordinator } = require("../utils/mail-service");
 const changePassword = async (req, res) => {
   try {
     const { email, oldPassword, newPassword } = req.body;
@@ -297,9 +298,8 @@ const uploadContribution = async (req, res) => {
     });
 
     const notificationContent = `A new contribution titled "${title}" has been added.`;
-   
-      await sendNotification(newContribution.id, user.id, notificationContent);
-  
+
+    await sendNotification(newContribution.id, user.id, notificationContent);
 
     res
       .status(StatusCodes.OK)
@@ -349,7 +349,6 @@ const sendNotification = async (contributionId, userId, content) => {
     console.error("Error sending notification:", error);
   }
 };
-
 
 const viewMyContributions = async (req, res) => {
   try {
@@ -435,10 +434,10 @@ const viewContributionDetail = async (req, res) => {
     const image = await prisma.image.findMany({
       where: { contributionId: contributions.id },
     });
-    
+
     const comment = await prisma.comment.findMany({
       where: { contributionId: contributions.id },
-    })
+    });
 
     res.status(StatusCodes.OK).json({
       message: "View details successfully",
@@ -447,10 +446,10 @@ const viewContributionDetail = async (req, res) => {
         closure_date: academicYear.closure_date,
         final_closure_date: academicYear.final_closure_date,
       },
-      document: document.map(( document)=>{
+      document: document.map((document) => {
         return {
           name: document.name,
-        }
+        };
       }),
       image: image.map((image) => {
         return {
