@@ -500,6 +500,35 @@ const viewMyProfile = async (req, res) => {
   }
 };
 
+const deleteContribution = async (req, res) => {
+  const { Id } = req.params;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: req.decodedPayload.data.email },
+    });
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
+
+    await prisma.contribution.delete({
+      where: { id: Id },
+    });
+
+    res.status(StatusCodes.OK).json({
+      message: "Your contribution deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(StatusCodes.BAD_GATEWAY).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
 module.exports = {
   editUserProfile,
   changePassword,
@@ -509,4 +538,5 @@ module.exports = {
   viewMyContributions,
   viewContributionDetail,
   viewMyProfile,
+  deleteContribution,
 };

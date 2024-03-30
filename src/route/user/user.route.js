@@ -10,7 +10,7 @@ const {
   uploadContribution,
   viewMyContributions,
   viewContributionDetail,
-  viewMyProfile,
+  viewMyProfile,deleteContribution
 } = require("../../controller/user.controller");
 const { uploadMiddleware } = require("../../middleware/upload"); // Import the middleware
 const validate = require("../../middleware/validate");
@@ -57,6 +57,12 @@ user.get(
   authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER]),
   checkDefaultPassword,
   viewMyProfile
+);
+
+user.delete(
+  "/deleteContribution/:Id",
+  authMiddleware([Role.STUDENT]),
+  deleteContribution
 );
 
 module.exports = user;
