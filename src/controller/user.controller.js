@@ -374,7 +374,6 @@ const viewMyContributions = async (req, res) => {
         },
         include: {
           AcademicYear: {
-            // Assuming academicYear is a related model
             select: {
               closure_date: true,
               final_closure_date: true,

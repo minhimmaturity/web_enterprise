@@ -18,10 +18,12 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^5.8.1",
+    "adm-zip": "^0.5.12",
     "app-root-path": "^3.1.0",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
     "bullmq": "^5.4.0",
+    "child-process-function": "^1.0.3",
     "concat-stream": "^2.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0",

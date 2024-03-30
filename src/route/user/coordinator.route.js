@@ -7,7 +7,7 @@ const coordinator = express.Router();
 const { validationResult } = require("express-validator");
 const {
   viewContribution,
-  chooseContribution,
+  chooseContribution, downloadContribution
 } = require("../../controller/coordinator.controller");
 const checkDefaultPassword = require("../../middleware/checkDefaultPassword");
 coordinator.use(express.json());
@@ -16,6 +16,12 @@ coordinator.get(
   authMiddleware([Role.COORDIONATOR]),
   checkDefaultPassword,
   viewContribution
+);
+coordinator.get(
+  "/downloadContribution",
+  authMiddleware([Role.COORDIONATOR]),
+  checkDefaultPassword,
+  downloadContribution
 );
 coordinator.put(
   "/chooseContribution/:Id",
