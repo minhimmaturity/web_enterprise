@@ -459,7 +459,7 @@ const editUserProfile = async (req, res) => {
 
     const updatedUser = await prisma.user.update({
       where: { id: Id },
-      data: { name, avatar, is_locked: is_locked === "true" },
+      data: { name, avatar, is_locked},
     });
 
     res.status(StatusCodes.OK).json({

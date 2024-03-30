@@ -73,7 +73,6 @@ admin.put("/editUser/:Id", authMiddleware([Role.ADMIN]), editUserProfile);
 admin.get(
   "/viewProfile",
   authMiddleware([Role.ADMIN]),
-  checkDefaultPassword,
   viewMyProfile
 );
 
