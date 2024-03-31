@@ -20,7 +20,7 @@ model User {
   avatar             String
   FacultyId          String?
   Admin              Admin?
-  Comment            Comment?
+  Comment            Comment[]
   Contribution       Contribution[]
   Message            Message[]
   Notification       Notification[]
@@ -92,22 +92,22 @@ model AcademicYear {
 }
 
 model Contribution {
-  id             String        @id @default(uuid())
+  id             String         @id @default(uuid())
   title          String
   description    String
-  is_disabled    Boolean       @default(false)
-  is_choosen     Boolean       @default(false)
+  is_disabled    Boolean        @default(false)
+  is_choosen     Boolean        @default(false)
   userId         String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  is_public      Boolean       @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  is_public      Boolean        @default(false)
   AcademicYearId String
   Comment        Comment[]
   AcademicYear   AcademicYear  @relation(fields: [AcademicYearId], references: [id], onDelete: Cascade)
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   Documents      Documents[]
   Image          Image[]
-  Notification   Notification?
+  Notification   Notification[]
 }
 
 model Image {
@@ -123,7 +123,7 @@ model Image {
 model Notification {
   id             String       @id @default(uuid())
   content        String
-  contributionId String       @unique
+  contributionId String
   userId         String
   contribution   Contribution @relation(fields: [contributionId], references: [id])
   user           User         @relation(fields: [userId], references: [id])
@@ -144,7 +144,7 @@ model Comment {
   content        String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  userId         String       @unique
+  userId         String
   contributionId String
   contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
