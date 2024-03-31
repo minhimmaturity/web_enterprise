@@ -24,9 +24,9 @@ model User {
   Contribution       Contribution[]
   Message            Message[]
   Notification       Notification[]
-  Faculty            Faculty?             @relation(fields: [FacultyId], references: [id], onDelete: Cascade)
+  Faculty            Faculty?             @relation(fields: [FacultyId], references: [id])
   UserOnConservation UserOnConservation[]
-  Conservation       Conversation[]       @relation("ConversationToUser")
+  Conservation       Conversation[]       
 }
 
 model Admin {
@@ -55,7 +55,7 @@ model Conversation {
   updatedAt          DateTime             @updatedAt
   Message            Message[]
   UserOnConservation UserOnConservation[]
-  user               User[]               @relation("ConversationToUser")
+  user               User[]               
 }
 
 model UserOnConservation {
