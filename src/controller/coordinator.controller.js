@@ -9,7 +9,7 @@ const { downloadFile } = require("../utils/firebase");
 const firebaseUtils = require("../utils/firebase");
 const fs = require("fs");
 const path = require("path");
-
+const {sendMailToManager} = require("../utils/mail-service");
 const prisma = new PrismaClient();
 
 dotenv.config();
@@ -76,6 +76,7 @@ const chooseContribution = async (req, res) => {
   const { Id } = req.params;
 
   try {
+    // Update contribution status to chosen
     const chosenContribution = await prisma.contribution.update({
       where: { id: Id },
       data: { is_choosen: true },
@@ -87,23 +88,6 @@ const chooseContribution = async (req, res) => {
     // Get the user ID who uploaded the contribution
     const userId = chosenContribution.userId;
 
-    // Send notification to marketing managers
-    await sendNotification(Id, userId, contributionContent);
-
-    res.status(StatusCodes.OK).json({
-      message: "Choose contribution successfully",
-      chosenContribution,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(StatusCodes.BAD_GATEWAY).json({
-      message: "Internal Server Error",
-    });
-  }
-};
-
-const sendNotification = async (contributionId, userId, content) => {
-  try {
     // Fetch user's faculty ID
     const userFaculty = await prisma.user.findUnique({
       where: { id: userId },
@@ -111,28 +95,38 @@ const sendNotification = async (contributionId, userId, content) => {
     });
 
     // Fetch marketing managers of the user's faculty
-
     const marketingManagers = await prisma.user.findMany({
       where: {
+        FacultyId: userFaculty.FacultyId,
         role: "MANAGER", // Assuming "MANAGER" is the role for marketing managers
       },
       select: { email: true },
     });
 
-    // Log email addresses of marketing managers
-    marketingManagers.forEach((manager) => {
-      console.log(manager.email);
-    });
-
     // Send email notifications to marketing managers
-    const notificationContent = `A new contribution has been chosen: "${content}"`;
+    const notificationContent = `A new contribution has been chosen: "${contributionContent}"`;
     marketingManagers.forEach(async (manager) => {
       await sendMailToManager(manager.email, notificationContent);
     });
 
-    console.log(`Notification sent: ${content}`);
+    // Create notification for the user
+    await prisma.notification.create({
+      data: {
+        content: notificationContent,
+        contributionId: Id,
+        userId: userId,
+      },
+    });
+
+    res.status(StatusCodes.OK).json({
+      message: "Contribution chosen successfully",
+      chosenContribution,
+    });
   } catch (error) {
-    console.error("Error sending notification:", error);
+    console.error("Error choosing contribution:", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: "Failed to choose contribution",
+    });
   }
 };
 

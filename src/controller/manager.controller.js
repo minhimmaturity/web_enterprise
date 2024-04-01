@@ -83,7 +83,6 @@ const getContributionPercentageByFaculty = async (req, res) => {
 };
 
 
-
 const publishContribution = async (req, res) => {
     const { Id } = req.params;
 
@@ -102,6 +101,7 @@ const publishContribution = async (req, res) => {
                 },
             },
         });
+
         // Check if the contribution exists
         if (!contribution) {
             return res.status(StatusCodes.NOT_FOUND).json({ error: 'Contribution not found.' });
@@ -121,12 +121,19 @@ const publishContribution = async (req, res) => {
         // Get the user's email associated with the contribution
         const userEmail = contribution.user.email;
         const userName = contribution.user.name;
-        console.log(userName)
 
+        // Create a notification for the student
+        const studentNotificationContent = `Your contribution titled "${updatedContribution.title}" has been published.`;
+        const studentNotification = await prisma.notification.create({
+            data: {
+                content: studentNotificationContent,
+                contributionId: updatedContribution.id,
+                userId: contribution.user.id,
+            },
+        });
 
-        studentNotificationContent = `Your contribution titled "${updatedContribution.title}" has been published.`;
+        // Send notification email to the user
         await sendMailToStudent(userName, userEmail, studentNotificationContent);
-        console.log(userEmail)
 
         // Send notification email to coordinators
         const coordinatorNotificationContent = `A contribution titled "${updatedContribution.title}" by ${contribution.user.name} has been published.`;
@@ -135,26 +142,39 @@ const publishContribution = async (req, res) => {
                 FacultyId: contribution.user.FacultyId,
                 role: "COORDIONATOR",
             },
-            select: { email: true },
+            select: { id: true, email: true },
         });
-        coordinators.forEach(async (coordinator) => {
+
+        // Create notifications for coordinators
+        const coordinatorNotifications = coordinators.map(coordinator => {
+            return prisma.notification.create({
+                data: {
+                    content: coordinatorNotificationContent,
+                    contributionId: updatedContribution.id,
+                    userId: coordinator.id,
+                },
+            });
+        });
+
+        // Await creation of all coordinator notifications
+        await Promise.all(coordinatorNotifications);
+        coordinators.forEach(coordinator => {
+            console.log(coordinator.email);
+        });
+        // Send email to each coordinator
+        coordinators.forEach(async coordinator => {
             await sendMailToCoordinator2(coordinator.email, coordinatorNotificationContent);
         });
 
-        // await prisma.notification.create({
-        //     data: {
-        //         content: studentNotificationContent,
-        //         contributionId: contribution.id,
-        //         userId: updatedContribution.userId,
-        //     },
-        // });
-
+        // Send response
         res.status(StatusCodes.OK).json({ message: 'Contribution has been published.', contribution: updatedContribution });
     } catch (error) {
         console.error('Error publishing contribution:', error);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to publish contribution.' });
     }
 };
+
+
 
 
 

@@ -15,6 +15,7 @@ const user = require("./route/user/user.route");
 const chat = require("./route/chat/chat.route");
 const manager = require("./route/user/manager.route");
 const coordinator = require("./route/user/coordinator.route");
+const comment = require("./route/comment.route");
 
 // Import controller functions for WebSocket events
 const { addUserIntoConservation, sentMessage } = require("./controller/chat.controller");
@@ -91,6 +92,7 @@ app.use("/admin", admin);
 app.use("/manager", manager);
 app.use("/coordinator", coordinator);
 app.use("/chat", chat);
+app.use("/comment", comment);
 
 process.on('SIGTERM', () => {
   server.close(() => {
