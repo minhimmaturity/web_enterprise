@@ -194,26 +194,33 @@ const publishContribution = async (req, res) => {
   }
 };
 
-const getChosenContributions = async (req, res) => {
-  try {
-    const chosenContributions = await prisma.contribution.findMany({
-      where: {
-        is_choosen: true,
-      },
-      include: {
-        user: true,
-        AcademicYear: true,
-      },
-    });
 
-    res.status(StatusCodes.OK).json(chosenContributions);
-  } catch (error) {
-    console.error("Error fetching chosen contributions:", error);
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ error: "Failed to fetch chosen contributions." });
-  }
+const getChosenContributions = async (req, res) => {
+    try {
+        const chosenContributions = await prisma.contribution.findMany({
+            where: {
+                is_choosen: true
+            },
+            include: {
+                user: {
+                    select: {
+                        name: true,
+                        Faculty: { select: { name: true } } // Include the Faculty name
+                    }
+                },
+                AcademicYear: true,
+                Documents: true,
+                Image: true
+            }
+        });
+
+        res.status(StatusCodes.OK).json(chosenContributions);
+    } catch (error) {
+        console.error('Error fetching chosen contributions:', error);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to fetch chosen contributions.' });
+    }
 };
+
 
 const viewExceptionReport = async (req, res) => {
   try {
