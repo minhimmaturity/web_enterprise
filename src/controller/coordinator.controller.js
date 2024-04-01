@@ -14,6 +14,7 @@ const prisma = new PrismaClient();
 
 dotenv.config();
 
+
 const viewContribution = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -25,34 +26,41 @@ const viewContribution = async (req, res) => {
         message: "User not found",
       });
     }
-
+    const { sort } = req.query;
     const limit = 10;
     let offset = 0;
     let allMyContributions = [];
+    const queryOptions = {
+      where: {
+        user: {
+          FacultyId: user.FacultyId,
+        },
+      },
+      include: {
+        AcademicYear: {
+          select: {
+            closure_date: true,
+            final_closure_date: true,
+          },
+        },
+        Image: {
+          select: {
+            path: true,
+          },
+        },
+      },
+      take: limit,
+      skip: offset,
+    };
+
+    if (sort) {
+      queryOptions.orderBy = {
+        createdAt: sort === "asc" ? "asc" : "desc",
+      };
+    }
 
     while (true) {
-      const contributions = await prisma.contribution.findMany({
-        where: {
-          user: {
-            FacultyId: user.FacultyId,
-          },
-        },
-        include: {
-          AcademicYear: {
-            select: {
-              closure_date: true,
-              final_closure_date: true,
-            },
-          },
-          Image: {
-            select: {
-              path: true,
-            },
-          },
-        },
-        skip: offset,
-        take: limit,
-      });
+      const contributions = await prisma.contribution.findMany(queryOptions);
 
       if (contributions.length === 0) {
         break;
@@ -60,10 +68,11 @@ const viewContribution = async (req, res) => {
 
       allMyContributions.push(contributions);
       offset += limit;
+      queryOptions.skip = offset;
     }
 
     res.status(StatusCodes.OK).json({
-      contribution: allMyContributions,
+      allMyContributions: allMyContributions,
     });
   } catch (error) {
     console.error(error);

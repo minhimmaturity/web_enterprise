@@ -350,6 +350,62 @@ const sendNotification = async (contributionId, userId, content) => {
   }
 };
 
+// const viewMyContributions = async (req, res) => {
+//   try {
+//     const user = await prisma.user.findUnique({
+//       where: { email: req.decodedPayload.data.email },
+//     });
+
+//     if (!user) {
+//       return res.status(StatusCodes.NOT_FOUND).json({
+//         message: "User not found",
+//       });
+//     }
+
+//     const limit = 10;
+//     let offset = 0;
+//     let allMyContributions = [];
+
+//     while (true) {
+//       const contributions = await prisma.contribution.findMany({
+//         where: {
+//           userId: user.id,
+//         },
+//         include: {
+//           AcademicYear: {
+//             select: {
+//               closure_date: true,
+//               final_closure_date: true,
+//             },
+//           },
+//           Image: {
+//             select: {
+//               path: true,
+//             },
+//           },
+//         },
+//         skip: offset,
+//         take: limit,
+//       });
+
+//       if (contributions.length === 0) {
+//         break;
+//       }
+
+//       allMyContributions.push(contributions);
+//       offset += limit;
+//     }
+
+//     res.status(StatusCodes.OK).json({
+//       contribution: allMyContributions,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(StatusCodes.BAD_GATEWAY).json({
+//       message: "Internal Server Error",
+//     });
+//   }
+// };
 const viewMyContributions = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -361,32 +417,39 @@ const viewMyContributions = async (req, res) => {
         message: "User not found",
       });
     }
-
+    const { sort } = req.query;
     const limit = 10;
     let offset = 0;
     let allMyContributions = [];
+    const queryOptions = {
+      where: {
+        userId: user.id,
+      },
+      include: {
+        AcademicYear: {
+          select: {
+            closure_date: true,
+            final_closure_date: true,
+          },
+        },
+        Image: {
+          select: {
+            path: true,
+          },
+        },
+      },
+      take: limit,
+      skip: offset,
+    };
+
+    if (sort) {
+      queryOptions.orderBy = {
+        createdAt: sort === "asc" ? "asc" : "desc",
+      };
+    }
 
     while (true) {
-      const contributions = await prisma.contribution.findMany({
-        where: {
-          userId: user.id,
-        },
-        include: {
-          AcademicYear: {
-            select: {
-              closure_date: true,
-              final_closure_date: true,
-            },
-          },
-          Image: {
-            select: {
-              path: true,
-            },
-          },
-        },
-        skip: offset,
-        take: limit,
-      });
+      const contributions = await prisma.contribution.findMany(queryOptions);
 
       if (contributions.length === 0) {
         break;
@@ -394,10 +457,11 @@ const viewMyContributions = async (req, res) => {
 
       allMyContributions.push(contributions);
       offset += limit;
+      queryOptions.skip = offset;
     }
 
     res.status(StatusCodes.OK).json({
-      contribution: allMyContributions,
+      allMyContributions: allMyContributions,
     });
   } catch (error) {
     console.error(error);
@@ -406,6 +470,7 @@ const viewMyContributions = async (req, res) => {
     });
   }
 };
+
 const viewContributionDetail = async (req, res) => {
   const { Id } = req.params;
   try {
