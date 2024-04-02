@@ -14,6 +14,7 @@ const prisma = new PrismaClient();
 
 dotenv.config();
 
+
 const viewContribution = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -25,34 +26,41 @@ const viewContribution = async (req, res) => {
         message: "User not found",
       });
     }
-
+    const { sort } = req.query;
     const limit = 10;
     let offset = 0;
     let allMyContributions = [];
+    const queryOptions = {
+      where: {
+        user: {
+          FacultyId: user.FacultyId,
+        },
+      },
+      include: {
+        AcademicYear: {
+          select: {
+            closure_date: true,
+            final_closure_date: true,
+          },
+        },
+        Image: {
+          select: {
+            path: true,
+          },
+        },
+      },
+      take: limit,
+      skip: offset,
+    };
+
+    if (sort) {
+      queryOptions.orderBy = {
+        createdAt: sort === "asc" ? "asc" : "desc",
+      };
+    }
 
     while (true) {
-      const contributions = await prisma.contribution.findMany({
-        where: {
-          user: {
-            FacultyId: user.FacultyId,
-          },
-        },
-        include: {
-          AcademicYear: {
-            select: {
-              closure_date: true,
-              final_closure_date: true,
-            },
-          },
-          Image: {
-            select: {
-              path: true,
-            },
-          },
-        },
-        skip: offset,
-        take: limit,
-      });
+      const contributions = await prisma.contribution.findMany(queryOptions);
 
       if (contributions.length === 0) {
         break;
@@ -60,10 +68,11 @@ const viewContribution = async (req, res) => {
 
       allMyContributions.push(contributions);
       offset += limit;
+      queryOptions.skip = offset;
     }
 
     res.status(StatusCodes.OK).json({
-      contribution: allMyContributions,
+      allMyContributions: allMyContributions,
     });
   } catch (error) {
     console.error(error);
@@ -133,6 +142,14 @@ const chooseContribution = async (req, res) => {
 const downloadContribution = async (req, res) => {
   try {
     const zip = new admZip();
+    const currentYear = new Date().getFullYear();
+
+    const academicYear = await prisma.academicYear.findFirst({
+      where: {
+        final_closure_date: { gte: new Date(`${currentYear}-01-01T00:00:00.000Z`) } ,
+      },
+    });
+
     const user = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
     });
@@ -145,42 +162,37 @@ const downloadContribution = async (req, res) => {
 
     const contributions = await prisma.contribution.findMany({
       where: {
-        user: {
-          FacultyId: user.FacultyId,
-        },
+        AcademicYearId: academicYear.id,
       },
     });
-    console.log(contributions);
-    const images = await prisma.image.findMany({
-      where: { contributionId: contributions.id },
-    });
-    const documents = await prisma.documents.findMany({
-      where: { contributionId: contributions.id },
-    });
 
-    for (let i = 0; i < documents.length; i++) {
-      const contribution = await prisma.contribution.findFirst({
-        where: {
-            id: documents[i].contributionId,
-        },
+    if(contributions.length==0){
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "Empty list",
       });
-      const contributionName = contribution.title;
-      const fileData = await downloadFile(documents[i].path);
-      const fileExtension = path.extname(documents[i].name); // Extract file extension
-      const uniqueFileName = `${contributionName}_${images[i].name}_${i}${fileExtension}`; // Appending index and file extension
-      zip.addFile(uniqueFileName, fileData);
     }
-    for (let i = 0; i < images.length; i++) {
-      const contribution = await prisma.contribution.findFirst({
-        where: {
-            id: images[i].contributionId,
-        },
+
+    for (const contribution of contributions) {
+      const images = await prisma.image.findMany({
+        where: { contributionId: contribution.id },
       });
-      const contributionName = contribution.title;
-      const fileData = await downloadFile(images[i].path);
-      const fileExtension = path.extname(images[i].name); // Extract file extension
-      const uniqueFileName = `${contributionName}_${images[i].name}_${i}${fileExtension}`; // Appending index and file extension
-      zip.addFile(uniqueFileName, fileData);
+      const documents = await prisma.documents.findMany({
+        where: { contributionId: contribution.id },
+      });
+
+      for (let i = 0; i < documents.length; i++) {
+        const fileData = await downloadFile(documents[i].path);
+        const fileExtension = path.extname(documents[i].name);
+        const uniqueFileName = `${contribution.title}_${documents[i].name}_${i}${fileExtension}`;
+        zip.addFile(uniqueFileName, fileData);
+      }
+
+      for (let i = 0; i < images.length; i++) {
+        const fileData = await downloadFile(images[i].path);
+        const fileExtension = path.extname(images[i].name);
+        const uniqueFileName = `${contribution.title}_${images[i].name}_${i}${fileExtension}`;
+        zip.addFile(uniqueFileName, fileData);
+      }
     }
     
     //download storage

@@ -5,7 +5,7 @@ const { Role } = require("@prisma/client");
 const {
   getContributionsStatsByFacultyAndYear,
   getContributionPercentageByFaculty,
-  chooseContribution,
+  chooseContribution,viewExceptionReport,downloadContribution,
   publishContribution,
   getChosenContributions,
 } = require("../../controller/manager.controller");
@@ -40,6 +40,19 @@ manager.put(
    // Add colon before "Id"
   checkDefaultPassword,
   publishContribution
+);
+
+manager.get(
+  "/viewExceptionReports", 
+  authMiddleware([Role.MANAGER]),
+  checkDefaultPassword,
+  viewExceptionReport
+);
+manager.get(
+  "/downloadContribution",
+  authMiddleware([Role.MANAGER]),
+  checkDefaultPassword,
+  downloadContribution
 );
 
 module.exports = manager;
