@@ -376,7 +376,7 @@ const downloadContribution = async (req, res) => {
     fs.writeFileSync(outputPath, zip.toBuffer());
     res.download(outputPath);
 
-    res.status(StatusCodes.BAD_GATEWAY).json({
+    res.status(StatusCodes.OK).json({
       message: "Download succeefully",
     });
   } catch (error) {
