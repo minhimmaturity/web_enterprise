@@ -15,14 +15,14 @@ const comment = Router();
 
 // Other routes...
 
-comment.post("/:contributionId", authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER]), checkDefaultPassword, createComment);
+comment.post("/:contributionId", authMiddleware([Role.COORDIONATOR]), checkDefaultPassword, createComment);
 
-comment.get("/:contributionId", authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER]), checkDefaultPassword, getCommentsByContributionId);
+comment.get("/:contributionId", authMiddleware([Role.COORDIONATOR]), checkDefaultPassword, getCommentsByContributionId);
 
-comment.get("/:id", authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER]), checkDefaultPassword, getComment);
+comment.get("/:id", authMiddleware([Role.COORDIONATOR]), checkDefaultPassword, getComment);
 
-comment.put("/edit/:id", authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER]), checkDefaultPassword, updateComment);
+comment.put("/edit/:id", authMiddleware([Role.COORDIONATOR]), checkDefaultPassword, updateComment);
 
-comment.delete("/delete/:id", authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER]), checkDefaultPassword, deleteComment);
+comment.delete("/delete/:id", authMiddleware([Role.COORDIONATOR]), checkDefaultPassword, deleteComment);
 
 module.exports = comment;
