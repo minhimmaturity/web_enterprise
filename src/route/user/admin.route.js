@@ -44,7 +44,7 @@ admin.post(
     createAcademicYear(req, res, next);
   }
 );
-// admin.post("/createAcademicYear", authMiddleware([Role.ADMIN]), createAcademicYear);
+
 admin.put(
   "/updateAcademicYear/:Id",
   authMiddleware([Role.ADMIN]),

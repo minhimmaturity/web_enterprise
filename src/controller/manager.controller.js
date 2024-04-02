@@ -196,30 +196,52 @@ const publishContribution = async (req, res) => {
 
 
 const getChosenContributions = async (req, res) => {
-    try {
-        const chosenContributions = await prisma.contribution.findMany({
-            where: {
-                is_choosen: true
-            },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        Faculty: { select: { name: true } } // Include the Faculty name
-                    }
-                },
-                AcademicYear: true,
-                Documents: true,
-                Image: true
-            }
-        });
+  try {
+    const limit = 10;
+    let offset = 0;
+    let allChosenContributions = [];
+    const { sort } = req.query;
 
-        res.status(StatusCodes.OK).json(chosenContributions);
-    } catch (error) {
-        console.error('Error fetching chosen contributions:', error.message);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to fetch chosen contributions.' });
+    const queryOptions = {
+      where: {
+        is_choosen: true
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            Faculty: { select: { name: true } }
+          }
+        },
+        AcademicYear: true,
+        Documents: true,
+        Image: true
+      },
+      take: limit,
+      orderBy: { createdAt: sort === 'asc' ? 'asc' : 'desc' } // Move orderBy inside include
+    };
+
+    while (true) {
+      const contributions = await prisma.contribution.findMany({
+        ...queryOptions,
+        skip: offset
+      });
+
+      if (contributions.length === 0) {
+        break;
+      }
+
+      allChosenContributions.push(contributions);
+      offset += limit;
     }
+
+    res.status(StatusCodes.OK).json({ allChosenContributions });
+  } catch (error) {
+    console.error('Error fetching chosen contributions:', error.message);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to fetch chosen contributions.' });
+  }
 };
+
 
 
 const viewExceptionReport = async (req, res) => {
