@@ -56,10 +56,10 @@ const generateAccessToken = async (name, email, role) => {
     const token = jwt.sign(
       { data: { name, email, role } },
       process.env.SECRET_KEY,
-      { expiresIn: "30s" }
+      { expiresIn: "2d" }
     );
 
-    await redisClient.setEx("token" + " " + email, 30, token);
+    await redisClient.setEx("token" + " " + email, 60 * 60 * 24 * 2, token);
 
     return token; // Return the token here
   } catch (error) {
@@ -137,7 +137,8 @@ const refreshToken = async (token, res, req, next) => {
       });
       await redisClient.setEx("accessToken" + " " + refreshedUser.data.email, 60*60*24*3 , newAccessToken);
       req.decodedPayload = refreshedUser;
-      return next();
+      req.newAccessToken = newAccessToken; 
+      res.json({ accessToken: newAccessToken });
     } catch (refreshError) {
       console.error('Error refreshing token:', refreshError);
       return res.status(403).json({ error: 'Error refreshing token' });
@@ -147,6 +148,12 @@ const refreshToken = async (token, res, req, next) => {
     return res.status(403).json({ error: 'Invalid access token' });
   }
 };
+
+module.exports = refreshToken;
+
+
+module.exports = refreshToken;
+
 
 const login = async (req, res) => {
   try {
