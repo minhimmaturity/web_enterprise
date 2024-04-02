@@ -49,7 +49,7 @@ user.get(
 
 user.get(
   "/viewMyContributions/:Id",
-  authMiddleware([Role.STUDENT]),
+  authMiddleware([Role.STUDENT, Role.COORDIONATOR]),
   checkDefaultPassword,
   viewContributionDetail
 );
