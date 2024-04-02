@@ -6,7 +6,7 @@ const bodyParser = require("body-parser");
 const hbs = require("hbs");
 const cors = require("cors");
 const { Server } = require("socket.io");
-const http = require("http");
+const { createServer } = require("http");
 
 // Import route handlers and controllers
 const auth = require("./route/user/auth.route");
@@ -54,8 +54,6 @@ hbs.registerHelper("helper_name", function (options) {
 
 hbs.registerPartial("partial_name", "partial value");
 
-// Create Socket.IO server
-
 // Use your existing route handlers
 app.use("/user", user);
 app.use("/auth", auth);
@@ -65,19 +63,13 @@ app.use("/coordinator", coordinator);
 app.use("/chat", chat);
 app.use("/comment", comment);
 
-const server = http.createServer(app);
+const httpServer = createServer(app);
 
-server.listen(process.env.PORT, process.env.HOST, () => {
-  console.log(
-    `Server is starting at http://${process.env.HOST}:${process.env.PORT}`
-  );
-});
-
-const io = new Server(server, {
+// Attach Socket.IO to the existing HTTP server
+const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:4000",
-    credentials: true
-  }
+    credentials: true,
+  },
 });
 
 // Handle WebSocket connections
@@ -85,8 +77,8 @@ io.on("connection", (socket) => {
   console.log("A user connected");
 
   socket.on("room", async (data) => {
+    const { room } = data; // Extract room from data
     socket.join(room);
-
     await createConversation();
   });
 
@@ -111,8 +103,14 @@ io.on("connection", (socket) => {
   });
 });
 
+httpServer.listen(process.env.PORT, () => {
+  console.log(
+    `Server is starting at http://${process.env.HOST}:${process.env.PORT}`
+  );
+});
+
 process.on("SIGTERM", () => {
-  server.close(() => {
+  httpServer.close(() => {
     console.log("Process terminated");
     prisma.$disconnect();
   });

@@ -433,23 +433,12 @@ const editMyContributions = async (req, res) => {
           expires: "03-17-2025",
         });
 
-        // Save document URL to database
-        documents.map(async (docs) => {
-          await prisma.documents.upsert({
-            where: {
-              id: docs.id,
-            },
-            update: {
-              name: file.originalname,
-              path: imageUrl,
-              contributionId: contributionId,
-            },
-            create: {
-              name: file.originalname,
-              path: imageUrl,
-              contributionId: contributionId,
-            },
-          });
+        await prisma.documents.create({
+          data: {
+            name: file.originalname,
+            path: documentUrl,
+            contributionId: contributionId,
+          },
         });
 
         return documentUrl;
@@ -476,22 +465,12 @@ const editMyContributions = async (req, res) => {
           expires: "03-17-2025",
         });
 
-        images.map(async (image) => {
-          await prisma.image.upsert({
-            where: {
-              id: image.id,
-            },
-            update: {
-              name: file.originalname,
-              path: imageUrl,
-              contributionId: contributionId,
-            },
-            create: {
-              name: file.originalname,
-              path: imageUrl,
-              contributionId: contributionId,
-            },
-          });
+        await prisma.image.create({
+          data: {
+            name: file.originalname,
+            path: imageUrl,
+            contributionId: contributionId,
+          },
         });
 
         // Save image URL to database
