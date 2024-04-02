@@ -7,7 +7,8 @@ const prisma = new PrismaClient();
 const { StatusCodes } = require("http-status-codes");
 const { storage } = require("../utils/firebase");
 const bucket = storage;
-const { sendMailToCoordinator } = require("../utils/mail-service");
+const { sendMailToCoordinator2 } = require("../utils/mail-service");
+const { promise } = require("bcrypt/promises");
 const changePassword = async (req, res) => {
   try {
     const { email, oldPassword, newPassword } = req.body;
@@ -350,62 +351,175 @@ const sendNotification = async (contributionId, userId, content) => {
   }
 };
 
-// const viewMyContributions = async (req, res) => {
-//   try {
-//     const user = await prisma.user.findUnique({
-//       where: { email: req.decodedPayload.data.email },
-//     });
+const editMyContributions = async (req, res) => {
+  try {
+    const { contributionId } = req.params;
+    const { title, description } = req.body;
+    if (!title || !description) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Title and description are required",
+      });
+    }
 
-//     if (!user) {
-//       return res.status(StatusCodes.NOT_FOUND).json({
-//         message: "User not found",
-//       });
-//     }
+    const user = await prisma.user.findFirst({
+      where: { email: req.decodedPayload.data.email },
+    });
 
-//     const limit = 10;
-//     let offset = 0;
-//     let allMyContributions = [];
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
 
-//     while (true) {
-//       const contributions = await prisma.contribution.findMany({
-//         where: {
-//           userId: user.id,
-//         },
-//         include: {
-//           AcademicYear: {
-//             select: {
-//               closure_date: true,
-//               final_closure_date: true,
-//             },
-//           },
-//           Image: {
-//             select: {
-//               path: true,
-//             },
-//           },
-//         },
-//         skip: offset,
-//         take: limit,
-//       });
+    const contribution = await prisma.contribution.findFirst({
+      where: { userId: user.id, id: contributionId },
+    });
 
-//       if (contributions.length === 0) {
-//         break;
-//       }
+    if (!contribution) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "Contribution not found",
+      });
+    }
 
-//       allMyContributions.push(contributions);
-//       offset += limit;
-//     }
+    // Delete existing documents and images
+    const documents = await prisma.documents.findMany({
+      where: { contributionId: contributionId },
+    });
 
-//     res.status(StatusCodes.OK).json({
-//       contribution: allMyContributions,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(StatusCodes.BAD_GATEWAY).json({
-//       message: "Internal Server Error",
-//     });
-//   }
-// };
+    documents.map(async (doc) => {
+      await prisma.documents.delete({
+        where: { id: doc.id },
+      });
+      const filePath = `documents/${contributionId}/${doc.name}`;
+      const blob = bucket.file(filePath);
+      await blob.delete();
+    });
+
+    const images = await prisma.image.findMany({
+      where: { contributionId: contributionId },
+    });
+    images.map(async (image) => {
+      await prisma.image.delete({
+        where: { id: image.id },
+      });
+      const filePath = `images/${contributionId}/${image.name}`;
+      const blob = bucket.file(filePath);
+      await blob.delete();
+    });
+
+    const files = req.files["files"];
+    if (!files) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message:
+          "At least one document or image is required for the contribution",
+      });
+    }
+
+    const documentUploadPromises = files.map(async (file) => {
+      if (file.mimetype.includes("application")) {
+        const filePath = `documents/${contributionId}/${file.originalname}`;
+        const blob = bucket.file(filePath);
+
+        // Upload file to Firebase Storage
+        await blob.save(file.buffer, {
+          metadata: {
+            contentType: file.mimetype,
+          },
+        });
+
+        // Get download URL for the document
+        const [documentUrl] = await blob.getSignedUrl({
+          action: "read",
+          expires: "03-17-2025",
+        });
+
+        // Save document URL to database
+        documents.map(async (docs) => {
+          await prisma.documents.upsert({
+            where: {
+              id: docs.id,
+            },
+            update: {
+              name: file.originalname,
+              path: imageUrl,
+              contributionId: contributionId,
+            },
+            create: {
+              name: file.originalname,
+              path: imageUrl,
+              contributionId: contributionId,
+            },
+          });
+        });
+
+        return documentUrl;
+      }
+    });
+
+    await Promise.all(documentUploadPromises);
+
+    const imageUploadPromises = files.map(async (file) => {
+      if (file.mimetype.includes("image")) {
+        const filePath = `images/${contributionId}/${file.originalname}`;
+        const blob = bucket.file(filePath);
+
+        // Upload file to Firebase Storage
+        await blob.save(file.buffer, {
+          metadata: {
+            contentType: file.mimetype,
+          },
+        });
+
+        // Get download URL for the image
+        const [imageUrl] = await blob.getSignedUrl({
+          action: "read",
+          expires: "03-17-2025",
+        });
+
+        images.map(async (image) => {
+          await prisma.image.upsert({
+            where: {
+              id: image.id,
+            },
+            update: {
+              name: file.originalname,
+              path: imageUrl,
+              contributionId: contributionId,
+            },
+            create: {
+              name: file.originalname,
+              path: imageUrl,
+              contributionId: contributionId,
+            },
+          });
+        });
+
+        // Save image URL to database
+
+        return imageUrl;
+      }
+    });
+
+    await Promise.all(imageUploadPromises);
+
+    // Update contribution title and description
+    const updateContribution = await prisma.contribution.update({
+      where: { id: contributionId },
+      data: { title, description },
+    });
+
+    res.status(StatusCodes.OK).json({
+      message: "Contribution updated successfully",
+      contribution: updateContribution,
+    });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
+  }
+};
+
 const viewMyContributions = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -603,4 +717,5 @@ module.exports = {
   viewContributionDetail,
   viewMyProfile,
   deleteContribution,
+  editMyContributions,
 };

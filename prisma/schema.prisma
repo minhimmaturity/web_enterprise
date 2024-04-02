@@ -22,11 +22,11 @@ model User {
   Admin              Admin?
   Comment            Comment[]
   Contribution       Contribution[]
+  Conversation       Conversation[]       @relation("CreatedBy")
   Message            Message[]
   Notification       Notification[]
   Faculty            Faculty?             @relation(fields: [FacultyId], references: [id])
   UserOnConservation UserOnConservation[]
-  Conversation       Conversation[]       @relation("CreatedBy")
 }
 
 model Admin {
@@ -53,10 +53,10 @@ model Conversation {
   id                  String               @id @default(uuid())
   createAt            DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+  userId              String?
+  createBy            User?                @relation("CreatedBy", fields: [userId], references: [id])
   messages            Message[]
   userOnConversations UserOnConservation[]
-  createBy            User?                @relation("CreatedBy", fields: [userId], references: [id])
-  userId              String?
 }
 
 model UserOnConservation {

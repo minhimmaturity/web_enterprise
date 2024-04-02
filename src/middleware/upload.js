@@ -8,12 +8,13 @@ const storage = require("../utils/firebase");
 const multerStorage = multer.memoryStorage();
 
 const upload = multer({
+  fileFilter: (req, file, cb) => {
+    cb(null, true); // Accept all files
+  },
   storage: multerStorage,
 });
 
-const uploadMiddleware = upload.fields([
-  { name: "files", maxCount: 5 }
-]);
+const uploadMiddleware = upload.fields([{ name: "files", maxCount: 5 }]);
 
 // Error handling middleware
 const handleUploadError = (err, req, res, next) => {
