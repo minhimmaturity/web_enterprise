@@ -3,43 +3,64 @@ const { PrismaClient, Role } = require("@prisma/client");
 const dotenv = require("dotenv");
 const prisma = new PrismaClient();
 const { StatusCodes } = require("http-status-codes");
+const user = require("../route/user/user.route");
 
-const createConversation = async (req, res) => {
+const createConversation = async (userEmail, req, res) => {
   try {
-    const userEmail = req.decodedPayload.data.email;
-    const user = await prisma.user.findFirst({where: {email: userEmail}})
-    
-    const data = {userId: user.id};
-    const createConservation = await prisma.conversation.create({ data: data });
-    res.status(StatusCodes.OK).json({
-      message: "create chat successfully",
-      conservation: createConservation,
-    });
-  } catch (error) {
-    console.log(error.message);
-  }
-};
+    const user = await prisma.user.findFirst({ where: { email: userEmail } });
+    if (!user) {
+      const response = {
+        statusCode: StatusCodes.NOT_FOUND,
+        body: JSON.stringify({
+          message: "User not found",
+        }),
+      };
+      return res.status(response.statusCode).json(JSON.parse(response.body));
+    }
 
-const addUserIntoConservation = async (
-  userId1,
-  userId2,
-  conversationId,
-  req,
-  res
-) => {
-  try {
-    const data = [
-      { userId: userId1, conversationId: conversationId },
-      { userId: userId2, conversationId: conversationId },
-    ];
-
-    console.log(data);
-
-    const userAreInChat = await prisma.userOnConservation.createMany({
+    const data = { userId: user.id };
+    const createConversation = await prisma.conversation.create({
       data: data,
     });
 
-    console.log(userAreInChat);
+    const response = {
+      statusCode: StatusCodes.OK,
+      body: JSON.stringify({
+        message: "Conversation created successfully",
+        conversation: createConversation,
+      }),
+    };
+    return response;
+  } catch (error) {
+    console.error(error.message);
+    const response = {
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      body: JSON.stringify({
+        message: "Error creating conversation",
+      }),
+    };
+    return res.status(response.statusCode).json(JSON.parse(response.body));
+  }
+};
+
+const addUserIntoConservation = async (users, conversationId, req, res) => {
+  try {
+    let userToChat = [];
+    // let studentIds = req.body.StudentId.split(",").map((id) => id.trim());
+    const user = users.split(",").map((id) => id.trim());
+    user.map((u) => {
+      console.log(u);
+      const data = {
+        userId: u,
+        conversationId: conversationId,
+      };
+
+      userToChat.push(data);
+    });
+
+    const userAreInChat = await prisma.userOnConservation.createMany({
+      data: userToChat,
+    });
     const response = {
       statusCode: 200,
       body: JSON.stringify({
@@ -53,7 +74,6 @@ const addUserIntoConservation = async (
   }
 };
 
-
 const sentMessage = async (userId, conversationId, text, req, res) => {
   const data = {
     userId: userId,
@@ -61,14 +81,47 @@ const sentMessage = async (userId, conversationId, text, req, res) => {
     text: text,
   };
 
-  const message = await prisma.message.create({ data: data });
+  const message = await prisma.message.createMany({ data: data });
   const response = {
     statusCode: 200,
-    body: JSON.stringify({ message: "sent message successfully", message: message })
+    body: JSON.stringify({
+      message: "sent message successfully",
+      message: message,
+    }),
   };
 
   return response;
 };
 
+const validateUserInConversation = async (userId, conversationId, req, res) => {
+  const userInConversation = await prisma.userOnConservation.findMany({
+    where: { userId: userId, conversationId: conversationId },
+  });
+  if (!userInConversation) {
+    // Handle the case where the user is not authorized to send messages in this conversation
+    return false;
+  }
+  return true;
+};
 
-module.exports = { createConversation, addUserIntoConservation, sentMessage };
+const getMessagesInConversation = async (conversationId) => {
+  try {
+      const messages = await prisma.message.findMany({
+          where: {
+              conversationId: conversationId
+          },
+          orderBy: {
+              createdAt: 'asc' // You can change this to 'desc' if you want to order messages by descending order
+          },
+          include: {
+              sender: true // Include the sender details if needed
+          }
+      });
+      return messages;
+  } catch (error) {
+      console.error("Error retrieving messages:", error);
+      throw error;
+  }
+};
+
+module.exports = { createConversation, addUserIntoConservation, sentMessage, validateUserInConversation, getMessagesInConversation };

@@ -16,12 +16,17 @@ const chat = require("./route/chat/chat.route");
 const manager = require("./route/user/manager.route");
 const coordinator = require("./route/user/coordinator.route");
 const comment = require("./route/comment.route");
+const jwt = require("jsonwebtoken");
+const { storage } = require("./utils/firebase");
+const bucket = storage;
 
 // Import controller functions for WebSocket events
 const {
   addUserIntoConservation,
   sentMessage,
   createConversation,
+  validateUserInConversation,
+  getMessagesInConversation,
 } = require("./controller/chat.controller");
 const { authenticateSocket } = require("./middleware/checkRole");
 
@@ -73,90 +78,181 @@ const io = new Server(httpServer, {
   },
 });
 
-io.use(async (socket, next) => {
-  try {
-    const authHeader = socket.handshake.headers.access_token;
-    const token = authHeader && authHeader.split(" ")[1];
+// Register middleware for socket authentication
+// io.use(async (socket, next) => {
+//   try {
 
-    if (!token) {
-      return next(new Error("Token not provided"));
-    }
+//     next();
+//   } catch (error) {
+//     console.error("Error in socket authentication:", error);
+//     next(error);
+//   }
+// });
 
-    let decodedPayload;
-    let userEmail;
-    try {
-      decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
-      userEmail = decodedPayload.data.email;
-      console.log(userEmail);
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        return next(new Error("Token expired"));
-      } else {
-        return next(new Error("Invalid access token"));
-      }
-    }
+// Connection event handler
+io.on("connection", async (socket) => {
+  const authHeader = socket.handshake.headers["access-token"];
 
-    console.log("Decoded Payload:", decodedPayload); // Log decoded payload
-    socket.userEmail = userEmail;
-
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail },
-    });
-
-    if (!user) {
-      return next(new Error("User not found"));
-    }
-
-    socket.user = user;
-    next();
-  } catch (error) {
-    console.error("Error in socket authentication:", error);
-    next(error);
+  if (!authHeader) {
+    console.error("Token not provided");
+    return;
   }
-});
 
-// Handle WebSocket connections
-io.use(async (socket, next) => {
+  let decodedPayload;
+  let userEmail;
   try {
-    const authHeader = socket.handshake.headers.authorization; // Change header field to 'authorization'
-    console.log(authHeader);
-    const token = authHeader && authHeader.split(" ")[1];
+    decodedPayload = jwt.verify(authHeader, process.env.SECRET_KEY);
 
-    if (!token) {
-      return next(new Error("Token not provided"));
-    }
-
-    let decodedPayload;
-    let userEmail;
-    try {
-      decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
-      userEmail = decodedPayload.data.email;
-      console.log(userEmail);
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        return next(new Error("Token expired"));
-      } else {
-        return next(new Error("Invalid access token"));
-      }
-    }
-
-    console.log("Decoded Payload:", decodedPayload); // Log decoded payload
-    socket.userEmail = userEmail;
-
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail },
-    });
-
-    if (!user) {
-      return next(new Error("User not found"));
-    }
-
-    socket.user = user;
-    next();
+    userEmail = decodedPayload.data.email;
+    console.log("User email:", userEmail);
   } catch (error) {
-    console.error("Error in socket authentication:", error);
-    next(error);
+    console.error("Error verifying token:", error.message);
+    return;
   }
+
+  console.log("Decoded Payload:", decodedPayload); // Log decoded payload
+
+  socket.userEmail = userEmail;
+
+  const user = await prisma.user.findUnique({
+    where: { email: userEmail },
+  });
+
+  if (!user) {
+    console.error("User not found");
+    return;
+  }
+
+  socket.user = user;
+
+  console.log("A user connected:", user.email); // Access userEmail from socket object
+
+  // Handle room join
+  socket.on("create-room", async () => {
+    await createConversation(user.email);
+  });
+
+  // Handle joining a conversation
+  socket.on("join", async (data) => {
+    const { users, conversationId } = data;
+    socket.join(conversationId);
+
+    await addUserIntoConservation(users, conversationId);
+  });
+
+  // Handle sending a message
+  // socket.on("message", async (data) => {
+  //   const { conversationId, userId, text, files } = data;
+  //   const userInConvertsation = await validateUserInConversation(userId);
+  //   if(userInConvertsation) {
+  //     if (files && files.length > 0) {
+  //       const fileUploadPromises = files.map(async (file) => {
+  //         const filePath = `chat/files/${conversationId}/${file.filename}`; // Use filename instead of originalname
+  //         const blob = bucket.file(filePath);
+
+  //         // Convert base64 encoded content to a buffer
+  //         const buffer = Buffer.from(file.content, "base64");
+
+  //         // Upload file to Firebase Storage
+  //         await blob.save(buffer, {
+  //           // Use buffer instead of file.buffer
+  //           metadata: {
+  //             contentType: file.mimetype,
+  //           },
+  //         });
+  //         const [fileUrl] = await blob.getSignedUrl({
+  //           action: "read",
+  //           expires: "03-17-2025",
+  //         });
+
+  //         // Save file URL to database
+  //         await sentMessage(userId, conversationId, fileUrl);
+
+  //         return fileUrl;
+  //       });
+  //       await Promise.all(fileUploadPromises);
+  //     }
+  //     if (!text) {
+  //       return;
+  //     }
+  //     await sentMessage(userId, conversationId, text);
+  //   } else {
+  //     socket.emit("error", "You are not authorized to send messages in this conversation.");
+  //   }
+
+  //   // Broadcast the message to all clients in the conversation
+  // });
+
+  socket.on("message", async (data) => {
+    const { conversationId, userId, text, files } = data;
+    const userInConvertsation = await validateUserInConversation(userId);
+    if (userInConvertsation) {
+      if (files && files.length > 0) {
+        const fileUploadPromises = files.map(async (file) => {
+          const filePath = `chat/files/${conversationId}/${file.filename}`; // Use filename instead of originalname
+          const blob = bucket.file(filePath);
+
+          // Convert base64 encoded content to a buffer
+          const buffer = Buffer.from(file.content, "base64");
+
+          // Upload file to Firebase Storage
+          await blob.save(buffer, {
+            // Use buffer instead of file.buffer
+            metadata: {
+              contentType: file.mimetype,
+            },
+          });
+          const [fileUrl] = await blob.getSignedUrl({
+            action: "read",
+            expires: "03-17-2025",
+          });
+
+          // Save file URL to database
+          await sentMessage(userId, conversationId, fileUrl);
+
+          return fileUrl;
+        });
+        await Promise.all(fileUploadPromises);
+      }
+      if (!text) {
+        return;
+      }
+      await sentMessage(userId, conversationId, text);
+
+      // Broadcast the message to all clients in the conversation room
+      socket.to(conversationId).emit("message", {
+        userId,
+        conversationId,
+        text,
+        files,
+      });
+    } else {
+      socket.emit(
+        "error",
+        "You are not authorized to send messages in this conversation."
+      );
+    }
+  });
+
+  socket.on("get-message", async (data) => {
+    const { conversationId } = data;
+
+    console.log(socket.rooms);
+
+    try {
+      const messages = await getMessagesInConversation(conversationId);
+      // Send the retrieved messages back to the client
+      socket.emitWithAck("get-message-response", messages);
+    } catch (error) {
+      // Handle the error, for example:
+      socket.emitWithAck("error", "Error retrieving messages");
+    }
+  });
+
+  // Handle disconnect
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
 });
 
 httpServer.listen(process.env.PORT, () => {
