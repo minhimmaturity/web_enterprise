@@ -18,7 +18,11 @@ const coordinator = require("./route/user/coordinator.route");
 const comment = require("./route/comment.route");
 
 // Import controller functions for WebSocket events
-const { addUserIntoConservation, sentMessage } = require("./controller/chat.controller");
+const {
+  addUserIntoConservation,
+  sentMessage,
+  createConversation,
+} = require("./controller/chat.controller");
 
 dotenv.config();
 
@@ -50,14 +54,41 @@ hbs.registerHelper("helper_name", function (options) {
 
 hbs.registerPartial("partial_name", "partial value");
 
+// Create Socket.IO server
+
+// Use your existing route handlers
+app.use("/user", user);
+app.use("/auth", auth);
+app.use("/admin", admin);
+app.use("/manager", manager);
+app.use("/coordinator", coordinator);
+app.use("/chat", chat);
+app.use("/comment", comment);
+
 const server = http.createServer(app);
 
-// Create Socket.IO server
-const io = new Server(server);
+server.listen(process.env.PORT, process.env.HOST, () => {
+  console.log(
+    `Server is starting at http://${process.env.HOST}:${process.env.PORT}`
+  );
+});
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:4000",
+    credentials: true
+  }
+});
 
 // Handle WebSocket connections
 io.on("connection", (socket) => {
   console.log("A user connected");
+
+  socket.on("room", async (data) => {
+    socket.join(room);
+
+    await createConversation();
+  });
 
   // Handle joining a conversation
   socket.on("join", async (data) => {
@@ -80,23 +111,9 @@ io.on("connection", (socket) => {
   });
 });
 
-
-server.listen(process.env.PORT, process.env.HOST, () => {
-  console.log(`Server is starting at http://${process.env.HOST}:${process.env.PORT}`);
-});
-
-// Use your existing route handlers
-app.use("/user", user);
-app.use("/auth", auth);
-app.use("/admin", admin);
-app.use("/manager", manager);
-app.use("/coordinator", coordinator);
-app.use("/chat", chat);
-app.use("/comment", comment);
-
-process.on('SIGTERM', () => {
+process.on("SIGTERM", () => {
   server.close(() => {
-    console.log('Process terminated');
+    console.log("Process terminated");
     prisma.$disconnect();
   });
 });

@@ -192,7 +192,7 @@ const getChosenContributions = async (req, res) => {
 
         res.status(StatusCodes.OK).json(chosenContributions);
     } catch (error) {
-        console.error('Error fetching chosen contributions:', error);
+        console.error('Error fetching chosen contributions:', error.message);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to fetch chosen contributions.' });
     }
 };

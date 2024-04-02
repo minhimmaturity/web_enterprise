@@ -6,7 +6,10 @@ const { StatusCodes } = require("http-status-codes");
 
 const createConversation = async (req, res) => {
   try {
-    const data = {};
+    const userEmail = req.decodedPayload.data.email;
+    const user = await prisma.user.findFirst({where: {email: userEmail}})
+    
+    const data = {userId: user.id};
     const createConservation = await prisma.conversation.create({ data: data });
     res.status(StatusCodes.OK).json({
       message: "create chat successfully",
