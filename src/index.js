@@ -23,6 +23,7 @@ const {
   sentMessage,
   createConversation,
 } = require("./controller/chat.controller");
+const { authenticateSocket } = require("./middleware/checkRole");
 
 dotenv.config();
 
@@ -72,41 +73,123 @@ const io = new Server(httpServer, {
   },
 });
 
+io.use(async (socket, next) => {
+  try {
+    const authHeader = socket.handshake.headers.access_token;
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if (!token) {
+      return next(new Error("Token not provided"));
+    }
+
+    let decodedPayload;
+    let userEmail;
+    try {
+      decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
+      userEmail = decodedPayload.data.email;
+      console.log(userEmail);
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        return next(new Error("Token expired"));
+      } else {
+        return next(new Error("Invalid access token"));
+      }
+    }
+
+    console.log("Decoded Payload:", decodedPayload); // Log decoded payload
+    socket.userEmail = userEmail;
+
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail },
+    });
+
+    if (!user) {
+      return next(new Error("User not found"));
+    }
+
+    socket.user = user;
+    next();
+  } catch (error) {
+    console.error("Error in socket authentication:", error);
+    next(error);
+  }
+});
+
 // Handle WebSocket connections
-io.on("connection", (socket) => {
-  console.log("A user connected");
+io.use(async (socket, next) => {
+  try {
+    const authHeader = socket.handshake.headers.authorization; // Change header field to 'authorization'
+    console.log(authHeader);
+    const token = authHeader && authHeader.split(" ")[1];
 
-  socket.on("room", async (data) => {
-    const { room } = data; // Extract room from data
-    socket.join(room);
-    await createConversation();
-  });
+    if (!token) {
+      return next(new Error("Token not provided"));
+    }
 
-  // Handle joining a conversation
-  socket.on("join", async (data) => {
-    const { userId1, userId2, conversationId } = data;
-    await addUserIntoConservation(userId1, userId2, conversationId);
-  });
+    let decodedPayload;
+    let userEmail;
+    try {
+      decodedPayload = jwt.verify(token, process.env.SECRET_KEY);
+      userEmail = decodedPayload.data.email;
+      console.log(userEmail);
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        return next(new Error("Token expired"));
+      } else {
+        return next(new Error("Invalid access token"));
+      }
+    }
 
-  // Handle sending a message
-  socket.on("message", async (data) => {
-    const { conversationId, userId, text } = data;
-    await sentMessage(userId, conversationId, text);
+    console.log("Decoded Payload:", decodedPayload); // Log decoded payload
+    socket.userEmail = userEmail;
 
-    // Broadcast the message to all clients in the conversation
-    io.emit("message", data);
-  });
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail },
+    });
 
-  // Handle disconnect
-  socket.on("disconnect", () => {
-    console.log("User disconnected");
-  });
+    if (!user) {
+      return next(new Error("User not found"));
+    }
+
+    socket.user = user;
+    next();
+  } catch (error) {
+    console.error("Error in socket authentication:", error);
+    next(error);
+  }
 });
 
 httpServer.listen(process.env.PORT, () => {
   console.log(
     `Server is starting at http://${process.env.HOST}:${process.env.PORT}`
   );
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+  // Optionally, attempt to gracefully shut down connections, close database connections, etc.
+  // Then restart the server
+  console.log("Restarting server...");
+  httpServer.close(() => {
+    httpServer.listen(process.env.PORT, () => {
+      console.log(
+        `Server is starting at http://${process.env.HOST}:${process.env.PORT}`
+      );
+    });
+  });
+});
+
+const terminationSignals = ["SIGINT", "SIGTERM", "SIGQUIT"];
+
+terminationSignals.forEach((signal) => {
+  process.on(signal, () => {
+    console.log(`Received ${signal}, shutting down gracefully...`);
+    // Optionally, attempt to gracefully shut down connections, close database connections, etc.
+    httpServer.close(() => {
+      console.log("Server shut down.");
+      process.exit(0);
+    });
+  });
 });
 
 process.on("SIGTERM", () => {
