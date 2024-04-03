@@ -242,6 +242,44 @@ const getChosenContributions = async (req, res) => {
   }
 };
 
+const CountContributionsStats = async (req, res) => {
+  try {
+    const contributions = await prisma.contribution.findMany({
+      select: {
+        id: true,
+        AcademicYear: true,
+        user: {
+          select: {
+            Faculty: true,
+          },
+        },
+      },
+    });
+
+    const contributionsStats = {
+      totalContributions: contributions.length,
+      contributionsByFaculty: {},
+    };
+
+    contributions.forEach((contribution) => {
+      const faculty = contribution.user?.Faculty;
+      if (faculty && faculty.name) {
+        const facultyName = faculty.name;
+        const academicYearId = contribution.AcademicYear.id;
+        if (!contributionsStats.contributionsByFaculty[facultyName]) {
+          contributionsStats.contributionsByFaculty[facultyName] = 1;
+        } else {
+          contributionsStats.contributionsByFaculty[facultyName]++;
+        }
+      }
+    });
+
+    res.json(contributionsStats);
+  } catch (error) {
+    console.error("Error fetching contributions:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 
 const viewExceptionReport = async (req, res) => {
@@ -326,7 +364,7 @@ const downloadContribution = async (req, res) => {
       },
     });
 
-    if(contributions.length===0){
+    if(contributions.length==0){
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "Empty list",
       });
@@ -394,4 +432,5 @@ module.exports = {
   getChosenContributions,
   viewExceptionReport,
   downloadContribution,
+  CountContributionsStats
 };

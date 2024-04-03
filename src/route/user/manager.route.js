@@ -5,7 +5,7 @@ const { Role } = require("@prisma/client");
 const {
   getContributionsStatsByFacultyAndYear,
   getContributionPercentageByFaculty,
-  chooseContribution,viewExceptionReport,downloadContribution,
+  CountContributionsStats,viewExceptionReport,downloadContribution,
   publishContribution,
   getChosenContributions,
 } = require("../../controller/manager.controller");
@@ -48,6 +48,13 @@ manager.get(
   checkDefaultPassword,
   viewExceptionReport
 );
+manager.get(
+  "/CountContributionsStats", 
+  authMiddleware([Role.MANAGER]),
+  checkDefaultPassword,
+  CountContributionsStats
+);
+
 manager.get(
   "/downloadContribution",
   authMiddleware([Role.MANAGER]),
