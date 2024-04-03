@@ -9,11 +9,10 @@ const { downloadFile } = require("../utils/firebase");
 const firebaseUtils = require("../utils/firebase");
 const fs = require("fs");
 const path = require("path");
-const {sendMailToManager} = require("../utils/mail-service");
+const { sendMailToManager } = require("../utils/mail-service");
 const prisma = new PrismaClient();
 
 dotenv.config();
-
 
 const viewContribution = async (req, res) => {
   try {
@@ -86,51 +85,65 @@ const chooseContribution = async (req, res) => {
 
   try {
     // Update contribution status to chosen
-    const chosenContribution = await prisma.contribution.update({
+    const chosenContribution = await prisma.contribution.findFirst({
       where: { id: Id },
-      data: { is_choosen: true },
+      //data: { is_choosen: true },
     });
+    if (chosenContribution.is_choosen === false) {
+      const chosenContribution = await prisma.contribution.update({
+        where: { id: Id },
+        data: { is_choosen: true },
+      });
+      // Fetch contribution content
+      const contributionContent = chosenContribution.title; // Adjust this based on your contribution data structure
 
-    // Fetch contribution content
-    const contributionContent = chosenContribution.title; // Adjust this based on your contribution data structure
+      // Get the user ID who uploaded the contribution
+      const userId = chosenContribution.userId;
 
-    // Get the user ID who uploaded the contribution
-    const userId = chosenContribution.userId;
+      // Fetch user's faculty ID
+      const userFaculty = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { FacultyId: true },
+      });
 
-    // Fetch user's faculty ID
-    const userFaculty = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { FacultyId: true },
-    });
+      // Fetch marketing managers of the user's faculty
+      const marketingManagers = await prisma.user.findMany({
+        where: {
+          FacultyId: userFaculty.FacultyId,
+          role: "MANAGER", // Assuming "MANAGER" is the role for marketing managers
+        },
+        select: { email: true },
+      });
 
-    // Fetch marketing managers of the user's faculty
-    const marketingManagers = await prisma.user.findMany({
-      where: {
-        FacultyId: userFaculty.FacultyId,
-        role: "MANAGER", // Assuming "MANAGER" is the role for marketing managers
-      },
-      select: { email: true },
-    });
+      // Send email notifications to marketing managers
+      const notificationContent = `A new contribution has been chosen: "${contributionContent}"`;
+      marketingManagers.forEach(async (manager) => {
+        await sendMailToManager(manager.email, notificationContent);
+      });
 
-    // Send email notifications to marketing managers
-    const notificationContent = `A new contribution has been chosen: "${contributionContent}"`;
-    marketingManagers.forEach(async (manager) => {
-      await sendMailToManager(manager.email, notificationContent);
-    });
+      // Create notification for the user
+      await prisma.notification.create({
+        data: {
+          content: notificationContent,
+          contributionId: Id,
+          userId: userId,
+        },
+      });
 
-    // Create notification for the user
-    await prisma.notification.create({
-      data: {
-        content: notificationContent,
-        contributionId: Id,
-        userId: userId,
-      },
-    });
-
-    res.status(StatusCodes.OK).json({
-      message: "Contribution chosen successfully",
-      chosenContribution,
-    });
+      res.status(StatusCodes.OK).json({
+        message: "Contribution chosen successfully",
+        chosenContribution,
+      });
+    } else {
+      const chosenContribution = await prisma.contribution.update({
+        where: { id: Id },
+        data: { is_choosen: false },
+      });
+      res.status(StatusCodes.OK).json({
+        message: "Contribution unchosen successfully",
+        chosenContribution,
+      });
+    }
   } catch (error) {
     console.error("Error choosing contribution:", error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -146,7 +159,9 @@ const downloadContribution = async (req, res) => {
 
     const academicYear = await prisma.academicYear.findFirst({
       where: {
-        final_closure_date: { gte: new Date(`${currentYear}-01-01T00:00:00.000Z`) } ,
+        final_closure_date: {
+          gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
+        },
       },
     });
 
@@ -166,7 +181,7 @@ const downloadContribution = async (req, res) => {
       },
     });
 
-    if(contributions.length==0){
+    if (contributions.length === 0) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "Empty list",
       });
@@ -194,7 +209,7 @@ const downloadContribution = async (req, res) => {
         zip.addFile(uniqueFileName, fileData);
       }
     }
-    
+
     //download storage
     var DOWNLOAD_DIR = path.join(
       process.env.HOME || process.env.USERPROFILE,
@@ -202,12 +217,15 @@ const downloadContribution = async (req, res) => {
     );
     //day
     const currentDate = new Date();
-    const formattedDate = currentDate.toLocaleTimeString("en-GB", {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false 
-    }).split(":").join("-");
+    const formattedDate = currentDate
+      .toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      })
+      .split(":")
+      .join("-");
     //
     const outputPath = path.join(DOWNLOAD_DIR + `${formattedDate}_output.zip`);
     fs.writeFileSync(outputPath, zip.toBuffer());
