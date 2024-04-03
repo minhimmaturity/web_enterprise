@@ -25,10 +25,10 @@ const createConversation = async (userEmail, req, res) => {
 
     const response = {
       statusCode: StatusCodes.OK,
-      body: JSON.stringify({
+      body: {
         message: "Conversation created successfully",
         conversation: createConversation,
-      }),
+      },
     };
     return response;
   } catch (error) {
@@ -63,10 +63,10 @@ const addUserIntoConservation = async (users, conversationId, req, res) => {
     });
     const response = {
       statusCode: 200,
-      body: JSON.stringify({
+      body: {
         message: "user are in chat successfully",
         conservation: userAreInChat,
-      }),
+      },
     };
     return response;
   } catch (error) {
@@ -81,13 +81,13 @@ const sentMessage = async (userId, conversationId, text, req, res) => {
     text: text,
   };
 
-  const message = await prisma.message.createMany({ data: data });
+  const message = await prisma.message.create({ data: data });
   const response = {
     statusCode: 200,
-    body: JSON.stringify({
+    body: {
       message: "sent message successfully",
       message: message,
-    }),
+    },
   };
 
   return response;
@@ -106,22 +106,56 @@ const validateUserInConversation = async (userId, conversationId, req, res) => {
 
 const getMessagesInConversation = async (conversationId) => {
   try {
-      const messages = await prisma.message.findMany({
-          where: {
-              conversationId: conversationId
+    const messages = await prisma.message.findMany({
+      where: {
+        conversationId: conversationId,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+      select: {
+        id: true,
+        sender: {
+          select: {
+            id: true,
+            createAt: true,
           },
-          orderBy: {
-              createdAt: 'asc' // You can change this to 'desc' if you want to order messages by descending order
-          },
-          include: {
-              sender: true // Include the sender details if needed
-          }
-      });
-      return messages;
+        },
+      },
+    });
+    return messages;
   } catch (error) {
-      console.error("Error retrieving messages:", error);
-      throw error;
+    console.error("Error retrieving messages:", error);
+    throw error;
   }
 };
 
-module.exports = { createConversation, addUserIntoConservation, sentMessage, validateUserInConversation, getMessagesInConversation };
+const editMessage = async (messageId, text) => {
+  try {
+    const message = await prisma.message.update({
+      where: { id: messageId },
+      data: { text: text },
+    });
+
+    const response = {
+      statusCode: 200,
+      body: {
+        message: "edit message successfully",
+        message: message,
+      },
+    };
+    return response;
+  } catch (error) {
+    console.error("Error retrieving messages:", error);
+    throw error;
+  }
+};
+
+module.exports = {
+  createConversation,
+  addUserIntoConservation,
+  sentMessage,
+  validateUserInConversation,
+  getMessagesInConversation,
+  editMessage,
+};

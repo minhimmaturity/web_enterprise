@@ -27,6 +27,7 @@ const {
   createConversation,
   validateUserInConversation,
   getMessagesInConversation,
+  editMessage,
 } = require("./controller/chat.controller");
 const { authenticateSocket } = require("./middleware/checkRole");
 
@@ -78,18 +79,6 @@ const io = new Server(httpServer, {
   },
 });
 
-// Register middleware for socket authentication
-// io.use(async (socket, next) => {
-//   try {
-
-//     next();
-//   } catch (error) {
-//     console.error("Error in socket authentication:", error);
-//     next(error);
-//   }
-// });
-
-// Connection event handler
 io.on("connection", async (socket) => {
   const authHeader = socket.handshake.headers["access-token"];
 
@@ -129,59 +118,22 @@ io.on("connection", async (socket) => {
 
   // Handle room join
   socket.on("create-room", async () => {
-    await createConversation(user.email);
+    const room = await createConversation(user.email);
+
+    await socket.emitWithAck("create-room-response", room);
   });
 
   // Handle joining a conversation
   socket.on("join", async (data) => {
     const { users, conversationId } = data;
-    socket.join(conversationId);
 
-    await addUserIntoConservation(users, conversationId);
+    const userInConversation = await addUserIntoConservation(
+      users,
+      conversationId
+    );
+
+    await socket.emitWithAck("join-room-response", userInConversation);
   });
-
-  // Handle sending a message
-  // socket.on("message", async (data) => {
-  //   const { conversationId, userId, text, files } = data;
-  //   const userInConvertsation = await validateUserInConversation(userId);
-  //   if(userInConvertsation) {
-  //     if (files && files.length > 0) {
-  //       const fileUploadPromises = files.map(async (file) => {
-  //         const filePath = `chat/files/${conversationId}/${file.filename}`; // Use filename instead of originalname
-  //         const blob = bucket.file(filePath);
-
-  //         // Convert base64 encoded content to a buffer
-  //         const buffer = Buffer.from(file.content, "base64");
-
-  //         // Upload file to Firebase Storage
-  //         await blob.save(buffer, {
-  //           // Use buffer instead of file.buffer
-  //           metadata: {
-  //             contentType: file.mimetype,
-  //           },
-  //         });
-  //         const [fileUrl] = await blob.getSignedUrl({
-  //           action: "read",
-  //           expires: "03-17-2025",
-  //         });
-
-  //         // Save file URL to database
-  //         await sentMessage(userId, conversationId, fileUrl);
-
-  //         return fileUrl;
-  //       });
-  //       await Promise.all(fileUploadPromises);
-  //     }
-  //     if (!text) {
-  //       return;
-  //     }
-  //     await sentMessage(userId, conversationId, text);
-  //   } else {
-  //     socket.emit("error", "You are not authorized to send messages in this conversation.");
-  //   }
-
-  //   // Broadcast the message to all clients in the conversation
-  // });
 
   socket.on("message", async (data) => {
     const { conversationId, userId, text, files } = data;
@@ -208,7 +160,9 @@ io.on("connection", async (socket) => {
           });
 
           // Save file URL to database
-          await sentMessage(userId, conversationId, fileUrl);
+          const message = await sentMessage(userId, conversationId, fileUrl);
+
+          socket.emitWithAck("message-sent", message);
 
           return fileUrl;
         });
@@ -217,15 +171,10 @@ io.on("connection", async (socket) => {
       if (!text) {
         return;
       }
-      await sentMessage(userId, conversationId, text);
+      const message = await sentMessage(userId, conversationId, text);
+      socket.emitWithAck("message-sent", message);
 
       // Broadcast the message to all clients in the conversation room
-      socket.to(conversationId).emit("message", {
-        userId,
-        conversationId,
-        text,
-        files,
-      });
     } else {
       socket.emit(
         "error",
@@ -249,6 +198,64 @@ io.on("connection", async (socket) => {
     }
   });
 
+  socket.on("edit-message", async (data) => {
+    const { conversationId, userId, messageId, updatedFiles, text } = data;
+
+    try {
+      // Validate if the user is authorized to send messages in this conversation
+      const userInConversation = await validateUserInConversation(userId);
+      if (!userInConversation) {
+        socket.emit(
+          "error",
+          "You are not authorized to send messages in this conversation."
+        );
+        return;
+      }
+
+      // Upload updated files
+      if (updatedFiles && updatedFiles.length > 0) {
+        const fileUploadPromises = updatedFiles.map(async (file) => {
+          const filePath = `chat/files/${conversationId}/${file.filename}`;
+          const blob = bucket.file(filePath);
+
+          // Convert base64 encoded content to a buffer
+          const buffer = Buffer.from(file.content, "base64");
+
+          // Upload file to Firebase Storage
+          await blob.save(buffer, {
+            metadata: {
+              contentType: file.mimetype,
+            },
+          });
+
+          const [fileUrl] = await blob.getSignedUrl({
+            action: "read",
+            expires: "03-17-2025",
+          });
+
+          // Update message with the new file URL
+          const message = await editMessage(messageId, fileUrl);
+
+          await socket.emitWithAck("edit-message-response", message);
+
+          return fileUrl;
+        });
+
+        await Promise.all(fileUploadPromises);
+      }
+
+      // Broadcast that the file update is complete
+      if (!text) {
+        return;
+      }
+      const message = await editMessage(messageId, text);
+      socket.emitWithAck("edit-message-response", message);
+    } catch (error) {
+      console.error("Error updating file:", error);
+      socket.emit("error", "Error updating file");
+    }
+  });
+
   // Handle disconnect
   socket.on("disconnect", () => {
     console.log("User disconnected");
@@ -259,33 +266,6 @@ httpServer.listen(process.env.PORT, () => {
   console.log(
     `Server is starting at http://${process.env.HOST}:${process.env.PORT}`
   );
-});
-
-process.on("uncaughtException", (error) => {
-  console.error("Uncaught Exception:", error);
-  // Optionally, attempt to gracefully shut down connections, close database connections, etc.
-  // Then restart the server
-  console.log("Restarting server...");
-  httpServer.close(() => {
-    httpServer.listen(process.env.PORT, () => {
-      console.log(
-        `Server is starting at http://${process.env.HOST}:${process.env.PORT}`
-      );
-    });
-  });
-});
-
-const terminationSignals = ["SIGINT", "SIGTERM", "SIGQUIT"];
-
-terminationSignals.forEach((signal) => {
-  process.on(signal, () => {
-    console.log(`Received ${signal}, shutting down gracefully...`);
-    // Optionally, attempt to gracefully shut down connections, close database connections, etc.
-    httpServer.close(() => {
-      console.log("Server shut down.");
-      process.exit(0);
-    });
-  });
 });
 
 process.on("SIGTERM", () => {
