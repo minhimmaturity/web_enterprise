@@ -607,11 +607,13 @@ const viewContributionDetail = async (req, res) => {
       document: document.map((document) => {
         return {
           name: document.name,
+          path: document.path
         };
       }),
       image: image.map((image) => {
         return {
           name: image.name,
+          path: image.path
         };
       }),
       comment: comment.map((comment) => {
