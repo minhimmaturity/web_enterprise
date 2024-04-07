@@ -350,7 +350,6 @@ const sendNotification = async (contributionId, userId, content) => {
     console.error("Error sending notification:", error);
   }
 };
-
 const editMyContributions = async (req, res) => {
   try {
     const { contributionId } = req.params;
@@ -381,105 +380,135 @@ const editMyContributions = async (req, res) => {
       });
     }
 
-    // Delete existing documents and images
-    const documents = await prisma.documents.findMany({
+    // Fetch existing documents and images
+    const existingDocuments = await prisma.documents.findMany({
       where: { contributionId: contributionId },
     });
 
-    documents.map(async (doc) => {
-      await prisma.documents.delete({
-        where: { id: doc.id },
-      });
-      const filePath = `documents/${contributionId}/${doc.name}`;
-      const blob = bucket.file(filePath);
-      await blob.delete();
-    });
-
-    const images = await prisma.image.findMany({
+    const existingImages = await prisma.image.findMany({
       where: { contributionId: contributionId },
-    });
-    images.map(async (image) => {
-      await prisma.image.delete({
-        where: { id: image.id },
-      });
-      const filePath = `images/${contributionId}/${image.name}`;
-      const blob = bucket.file(filePath);
-      await blob.delete();
     });
 
     const files = req.files["files"];
-    if (!files) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        message:
-          "At least one document or image is required for the contribution",
-      });
-    }
 
-    const documentUploadPromises = files.map(async (file) => {
+    const documentUploadPromises = [];
+    const imageUploadPromises = [];
+
+    files.forEach(async (file) => {
       if (file.mimetype.includes("application")) {
-        const filePath = `documents/${contributionId}/${file.originalname}`;
-        const blob = bucket.file(filePath);
+        // Handle documents
+        const existingDocument = existingDocuments.find(
+          (doc) => doc.name === file.originalname
+        );
 
-        // Upload file to Firebase Storage
-        await blob.save(file.buffer, {
-          metadata: {
-            contentType: file.mimetype,
-          },
-        });
+        if (existingDocument) {
+          // Update existing document
+          const filePath = `documents/${contributionId}/${file.originalname}`;
+          const blob = bucket.file(filePath);
 
-        // Get download URL for the document
-        const [documentUrl] = await blob.getSignedUrl({
-          action: "read",
-          expires: "03-17-2025",
-        });
+          await blob.save(file.buffer, {
+            metadata: {
+              contentType: file.mimetype,
+            },
+          });
 
-        await prisma.documents.create({
-          data: {
-            name: file.originalname,
-            path: documentUrl,
-            contributionId: contributionId,
-          },
-        });
+          const [documentUrl] = await blob.getSignedUrl({
+            action: "read",
+            expires: "03-17-2025",
+          });
 
-        return documentUrl;
+          await prisma.documents.update({
+            where: { id: existingDocument.id },
+            data: {
+              path: documentUrl,
+            },
+          });
+
+          documentUploadPromises.push(documentUrl);
+        } else {
+          // Create new document
+          const filePath = `documents/${contributionId}/${file.originalname}`;
+          const blob = bucket.file(filePath);
+
+          await blob.save(file.buffer, {
+            metadata: {
+              contentType: file.mimetype,
+            },
+          });
+
+          const [documentUrl] = await blob.getSignedUrl({
+            action: "read",
+            expires: "03-17-2025",
+          });
+
+          await prisma.documents.create({
+            data: {
+              name: file.originalname,
+              path: documentUrl,
+              contributionId: contributionId,
+            },
+          });
+
+          documentUploadPromises.push(documentUrl);
+        }
+      } else if (file.mimetype.includes("image")) {
+        // Handle images
+        const existingImage = existingImages.find(
+          (image) => image.name === file.originalname
+        );
+
+        if (existingImage) {
+          // Update existing image
+          const filePath = `images/${contributionId}/${file.originalname}`;
+          const blob = bucket.file(filePath);
+
+          await blob.save(file.buffer, {
+            metadata: {
+              contentType: file.mimetype,
+            },
+          });
+
+          const [imageUrl] = await blob.getSignedUrl({
+            action: "read",
+            expires: "03-17-2025",
+          });
+
+          await prisma.image.update({
+            where: { id: existingImage.id },
+            data: {
+              path: imageUrl,
+            },
+          });
+
+          imageUploadPromises.push(imageUrl);
+        } else {
+          // Create new image
+          const filePath = `images/${contributionId}/${file.originalname}`;
+          const blob = bucket.file(filePath);
+
+          await blob.save(file.buffer, {
+            metadata: {
+              contentType: file.mimetype,
+            },
+          });
+
+          const [imageUrl] = await blob.getSignedUrl({
+            action: "read",
+            expires: "03-17-2025",
+          });
+
+          await prisma.image.create({
+            data: {
+              name: file.originalname,
+              path: imageUrl,
+              contributionId: contributionId,
+            },
+          });
+
+          imageUploadPromises.push(imageUrl);
+        }
       }
     });
-
-    await Promise.all(documentUploadPromises);
-
-    const imageUploadPromises = files.map(async (file) => {
-      if (file.mimetype.includes("image")) {
-        const filePath = `images/${contributionId}/${file.originalname}`;
-        const blob = bucket.file(filePath);
-
-        // Upload file to Firebase Storage
-        await blob.save(file.buffer, {
-          metadata: {
-            contentType: file.mimetype,
-          },
-        });
-
-        // Get download URL for the image
-        const [imageUrl] = await blob.getSignedUrl({
-          action: "read",
-          expires: "03-17-2025",
-        });
-
-        await prisma.image.create({
-          data: {
-            name: file.originalname,
-            path: imageUrl,
-            contributionId: contributionId,
-          },
-        });
-
-        // Save image URL to database
-
-        return imageUrl;
-      }
-    });
-
-    await Promise.all(imageUploadPromises);
 
     // Update contribution title and description
     const updateContribution = await prisma.contribution.update({
@@ -490,14 +519,16 @@ const editMyContributions = async (req, res) => {
     res.status(StatusCodes.OK).json({
       message: "Contribution updated successfully",
       contribution: updateContribution,
+      documents: documentUploadPromises,
+      images: imageUploadPromises,
     });
   } catch (error) {
     console.error(error);
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ error: error.message });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
   }
 };
+
+
 
 const viewMyContributions = async (req, res) => {
   try {
