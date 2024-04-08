@@ -550,6 +550,53 @@ const editMyContributions = async (req, res) => {
   }
 };
 
+const getPublishContributions = async (req, res) => {
+  try {
+    const limit = 10;
+    let offset = 0;
+    let allChosenContributions = [];
+    const { sort } = req.query;
+
+    const queryOptions = {
+      where: {
+        is_choosen: true,
+        is_public: true // Filter by is_public field
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            Faculty: { select: { name: true } }
+          }
+        },
+        AcademicYear: true,
+        Documents: true,
+        Image: true
+      },
+      take: limit,
+      orderBy: { createdAt: sort === 'asc' ? 'asc' : 'desc' } // Move orderBy inside include
+    };
+
+    while (true) {
+      const contributions = await prisma.contribution.findMany({
+        ...queryOptions,
+        skip: offset
+      });
+
+      if (contributions.length === 0) {
+        break;
+      }
+
+      allChosenContributions.push(contributions);
+      offset += limit;
+    }
+
+    res.status(StatusCodes.OK).json({ allChosenContributions });
+  } catch (error) {
+    console.error('Error fetching chosen contributions:', error.message);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to fetch chosen contributions.' });
+  }
+};
 
 
 const viewMyContributions = async (req, res) => {
@@ -763,4 +810,5 @@ module.exports = {
   viewMyProfile,
   deleteContribution,
   editMyContributions,
+  getPublishContributions
 };

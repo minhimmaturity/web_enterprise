@@ -13,6 +13,7 @@ const {
   viewMyProfile,
   deleteContribution,
   editMyContributions,
+  getPublishContributions
 } = require("../../controller/user.controller");
 const { uploadMiddleware } = require("../../middleware/upload"); // Import the middleware
 const validate = require("../../middleware/validate");
@@ -59,6 +60,10 @@ user.get(
   authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER]),
   checkDefaultPassword,
   viewMyProfile
+);
+user.get(
+  "/getPublishContributions",
+  getPublishContributions
 );
 
 user.delete(
