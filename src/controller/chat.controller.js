@@ -152,6 +152,21 @@ const editMessage = async (messageId, text) => {
   }
 };
 
+const getAllConversationByUserId = async(userEmail, req, res) => {
+  try {
+    const user = await prisma.user.findUnique({where: {email: userEmail}})
+    const conversations = await prisma.conversation.findMany({where:{userId: user.id}})
+
+    const response = {
+      statusCode: StatusCodes.OK,
+      conversations: conversations
+    }
+    return response
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
 module.exports = {
   createConversation,
   addUserIntoConservation,
@@ -159,4 +174,5 @@ module.exports = {
   validateUserInConversation,
   getMessagesInConversation,
   editMessage,
+  getAllConversationByUserId
 };

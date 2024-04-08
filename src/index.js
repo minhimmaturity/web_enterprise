@@ -29,6 +29,7 @@ const {
   validateUserInConversation,
   getMessagesInConversation,
   editMessage,
+  getAllConversationByUserId,
 } = require("./controller/chat.controller");
 const { authenticateSocket } = require("./middleware/checkRole");
 
@@ -256,6 +257,12 @@ io.on("connection", async (socket) => {
       socket.emit("error", "Error updating file");
     }
   });
+
+  socket.on("get-conversation", async() => {
+    const conversation = await getAllConversationByUserId(user.email);
+
+    await socket.emitWithAck("get-conversation-response", conversation)
+  })
 
   // Handle disconnect
   socket.on("disconnect", () => {
