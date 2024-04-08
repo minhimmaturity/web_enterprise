@@ -11,11 +11,11 @@ const createConversation = async (userEmail, req, res) => {
     if (!user) {
       const response = {
         statusCode: StatusCodes.NOT_FOUND,
-        body: JSON.stringify({
+        body: {
           message: "User not found",
-        }),
+        },
       };
-      return res.status(response.statusCode).json(JSON.parse(response.body));
+      return res.status(response.statusCode).json(response.body);
     }
 
     const data = { userId: user.id };
