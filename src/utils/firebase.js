@@ -1,4 +1,6 @@
 const admin = require("firebase-admin");
+const fetch = require("node-fetch");
+const path = require("path");
 const serviceAccount = require("../../web-enterprise-9263a-firebase-adminsdk-nvwy5-71e2e0d334.json");
 
 admin.initializeApp({
@@ -30,32 +32,35 @@ const storage = admin.storage().bucket();
 //   }
 // };
 
+const fetchFileFromUrl = async (url) => {
+  try {
+    const response = await fetch(url);
+    const fileName = path.basename(url); // Specify filename based on the URL
+    return { fileName };
+  } catch (error) {
+    console.error("Error fetching file:", error);
+    throw error;
+  }
+};
+
+const downloadFile = async (downloadUrl) => {
+  try {
+    // Fetch the file from the URL
+    const { fileName } = await fetchFileFromUrl(downloadUrl);
+
+    const fileRef = storage.file(fileName);
+
+    const [fileData] = await fileRef.download();
+
+    return fileData;
+  } catch (error) {
+    console.error("Error downloading file:", error);
+    throw new Error("Failed to download file");
+  }
+};
+
 module.exports = {
   storage,
-  downloadFile: async (downloadUrl) => {
-    try {
-      const url = new URL(downloadUrl);
-      let filePath = url.pathname.replace(/^\/+/, ""); // Remove leading slashes
-
-      // Remove the bucket name from the file path
-      const bucketNameIndex = filePath.indexOf("/");
-      if (bucketNameIndex !== -1) {
-        filePath = filePath.slice(bucketNameIndex + 1);
-      }
-
-      filePath = decodeURIComponent(filePath); // Decode URI components
-
-      // Get file reference
-      const file = storage.file(filePath);
-
-      // Download file
-      const [fileData] = await file.download();
-
-      return fileData;
-    } catch (error) {
-      console.error("Error downloading file:", error);
-      throw new Error("Failed to download file");
-    }
-  },
+  downloadFile,
   // fetchFileFromFirebase
 };
