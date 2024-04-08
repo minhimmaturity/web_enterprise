@@ -685,37 +685,17 @@ const viewContributionDetail = async (req, res) => {
       where: { id: contributions.AcademicYearId },
     });
 
-    const documents = await prisma.documents.findMany({
+    const document = await prisma.documents.findMany({
       where: { contributionId: contributions.id },
     });
 
-    const images = await prisma.image.findMany({
+    const image = await prisma.image.findMany({
       where: { contributionId: contributions.id },
     });
 
     const comment = await prisma.comment.findMany({
       where: { contributionId: contributions.id },
     });
-
-    const documentsArray = documents.map(doc => ({
-      fieldname: 'files',
-      originalname: doc.name,
-      encoding: '7bit', // Assuming base64 encoding
-      mimetype: 'application/pdf', // Assuming PDF files
-      size: doc.size || 0, // If available, populate with actual size
-      buffer: Buffer.from(doc.path, 'base64'), // Assuming your path contains base64-encoded data,
-      path: doc.path
-    }));
-
-    const imagesArray = images.map(img => ({
-      fieldname: 'files',
-      originalname: img.name,
-      encoding: 'base64', // Assuming base64 encoding
-      mimetype: 'image/jpeg', // Assuming JPEG images
-      size: img.size || 0, // If available, populate with actual size
-      buffer: Buffer.from(img.path, 'base64'), // Assuming your path contains base64-encoded data
-      path: img.path
-    }));
 
     res.status(StatusCodes.OK).json({
       message: "View details successfully",
@@ -724,8 +704,18 @@ const viewContributionDetail = async (req, res) => {
         closure_date: academicYear.closure_date,
         final_closure_date: academicYear.final_closure_date,
       },
-      documents: documentsArray,
-      images: imagesArray,
+      document: document.map((document) => {
+        return {
+          name: document.name,
+          path: document.path
+        };
+      }),
+      image: image.map((image) => {
+        return {
+          name: image.name,
+          path: image.path
+        };
+      }),
       comment: comment.map((comment) => {
         return {
           content: comment.content,

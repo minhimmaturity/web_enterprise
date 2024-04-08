@@ -8,18 +8,27 @@ admin.initializeApp({
 
 const storage = admin.storage().bucket();
 
-const fetchFileFromFirebase = async (filePath) => {
-  try {
-    const file = storage.file(filePath);
-    console.log(file);
-    const [url] = await file.getSignedUrl({ action: "read", expires: "03-17-2025" });
-    // Here, you might want to download the file or return the URL based on your requirements
-    return url;
-  } catch (error) {
-    console.error("Error fetching file from Firebase:", error);
-    throw error;
-  }
-};
+// const fetchFileFromFirebase = async (filePath) => {
+//   try {
+//     const file = storage.file(filePath);
+//     const [url] = await file.getSignedUrl({ action: "read", expires: "03-17-2025" })
+//     return url;
+//   } catch (error) {
+//     console.error("Error fetching file from Firebase:", error);
+//     throw error;
+//   }
+// };
+
+// const fetchFileFromFirebase = async (filePath, fileName) => {
+//   try {
+//     const response = await fetch(filePath);
+//     const blob = await response.blob();
+//     const fetchedFile = new File([blob], fileName); // Specify filename here
+//     setFile(fetchedFile);
+//   } catch (error) {
+//     console.error('Error fetching file:', error);
+//   }
+// };
 
 module.exports = {
   storage,
@@ -48,5 +57,5 @@ module.exports = {
       throw new Error("Failed to download file");
     }
   },
-  fetchFileFromFirebase
+  // fetchFileFromFirebase
 };
