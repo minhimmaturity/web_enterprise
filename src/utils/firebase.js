@@ -35,24 +35,20 @@ const storage = admin.storage().bucket();
 const fetchFileFromUrl = async (url) => {
   try {
     const response = await fetch(url);
-    const fileName = path.basename(url); // Specify filename based on the URL
-    return { fileName };
+    const buffer = await response.buffer();
+
+    return { data: buffer };
   } catch (error) {
-    console.error("Error fetching file:", error);
-    throw error;
+    console.error('Error fetching file:', error);
+    throw new Error("Failed to fetch file");
   }
 };
 
 const downloadFile = async (downloadUrl) => {
   try {
     // Fetch the file from the URL
-    const { fileName } = await fetchFileFromUrl(downloadUrl);
-
-    const fileRef = storage.file(fileName);
-
-    const [fileData] = await fileRef.download();
-
-    return fileData;
+    const { data } = await fetchFileFromUrl(downloadUrl);
+    return { data };
   } catch (error) {
     console.error("Error downloading file:", error);
     throw new Error("Failed to download file");
