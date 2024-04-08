@@ -423,7 +423,7 @@ const editMyContributions = async (req, res) => {
             where: { id: existingDocument.id },
             data: {
               path: documentUrl,
-              updatedAt: Date.now()
+              updatedAt: new Date(Date.now()).toISOString
             },
           });
 
@@ -480,7 +480,7 @@ const editMyContributions = async (req, res) => {
             where: { id: existingImage.id },
             data: {
               path: imageUrl,
-              updatedAt: Date.now()
+              updatedAt: new Date(Date.now()).toISOString
             },
           });
 
