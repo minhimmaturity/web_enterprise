@@ -5,10 +5,12 @@ const redisClient = require("../utils/connectRedis");
 const hashPassword = require("../utils/hashPassword");
 const prisma = new PrismaClient();
 const { StatusCodes } = require("http-status-codes");
-const { storage } = require("../utils/firebase");
+const { storage, fetchFileFromFirebase } = require("../utils/firebase");
 const bucket = storage;
 const { sendMailToCoordinator2 } = require("../utils/mail-service");
 const { promise } = require("bcrypt/promises");
+const axios = require('axios');
+const { PassThrough } = require('stream');
 const changePassword = async (req, res) => {
   try {
     const { email, oldPassword, newPassword } = req.body;
@@ -423,7 +425,7 @@ const editMyContributions = async (req, res) => {
             where: { id: existingDocument.id },
             data: {
               path: documentUrl,
-              updatedAt: new Date(Date.now()).toISOString
+              updatedAt: new Date(Date.now()).toISOString()
             },
           });
 
@@ -480,7 +482,7 @@ const editMyContributions = async (req, res) => {
             where: { id: existingImage.id },
             data: {
               path: imageUrl,
-              updatedAt: new Date(Date.now()).toISOString
+              updatedAt: new Date(Date.now()).toISOString()
             },
           });
 
@@ -636,17 +638,37 @@ const viewContributionDetail = async (req, res) => {
       where: { id: contributions.AcademicYearId },
     });
 
-    const document = await prisma.documents.findMany({
+    const documents = await prisma.documents.findMany({
       where: { contributionId: contributions.id },
     });
 
-    const image = await prisma.image.findMany({
+    const images = await prisma.image.findMany({
       where: { contributionId: contributions.id },
     });
 
     const comment = await prisma.comment.findMany({
       where: { contributionId: contributions.id },
     });
+
+    const documentsArray = documents.map(doc => ({
+      fieldname: 'files',
+      originalname: doc.name,
+      encoding: '7bit', // Assuming base64 encoding
+      mimetype: 'application/pdf', // Assuming PDF files
+      size: doc.size || 0, // If available, populate with actual size
+      buffer: Buffer.from(doc.path, 'base64'), // Assuming your path contains base64-encoded data,
+      path: doc.path
+    }));
+
+    const imagesArray = images.map(img => ({
+      fieldname: 'files',
+      originalname: img.name,
+      encoding: 'base64', // Assuming base64 encoding
+      mimetype: 'image/jpeg', // Assuming JPEG images
+      size: img.size || 0, // If available, populate with actual size
+      buffer: Buffer.from(img.path, 'base64'), // Assuming your path contains base64-encoded data
+      path: img.path
+    }));
 
     res.status(StatusCodes.OK).json({
       message: "View details successfully",
@@ -655,18 +677,8 @@ const viewContributionDetail = async (req, res) => {
         closure_date: academicYear.closure_date,
         final_closure_date: academicYear.final_closure_date,
       },
-      document: document.map((document) => {
-        return {
-          name: document.name,
-          path: document.path
-        };
-      }),
-      image: image.map((image) => {
-        return {
-          name: image.name,
-          path: image.path
-        };
-      }),
+      documents: documentsArray,
+      images: imagesArray,
       comment: comment.map((comment) => {
         return {
           content: comment.content,
@@ -680,6 +692,7 @@ const viewContributionDetail = async (req, res) => {
     });
   }
 };
+
 
 const viewMyProfile = async (req, res) => {
   try {
