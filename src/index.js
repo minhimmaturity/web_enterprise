@@ -120,15 +120,10 @@ io.on("connection", async (socket) => {
   console.log("A user connected:", user.email); // Access userEmail from socket object
 
   // Handle room join
-  socket.on("create-room", async () => {
-    const room = await createConversation(user.email);
-
-    await socket.emitWithAck("create-room-response", room);
-  });
 
   // Handle joining a conversation
   socket.on("join", async (data) => {
-    const { users, conversationId } = data;
+    const { users } = data;
 
     const existRoom = await findExistConversation(users);
 
@@ -137,9 +132,11 @@ io.on("connection", async (socket) => {
       await socket.emitWithAck("join-room-response", room);
 
     } else {
+      const room = await createConversation(user.email);
+
       const userInConversation = await addUserIntoConservation(
         users,
-        conversationId
+        room.body.conversation.id
       );
   
       await socket.emitWithAck("join-room-response", userInConversation);
