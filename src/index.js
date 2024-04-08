@@ -126,10 +126,17 @@ io.on("connection", async (socket) => {
     const { users } = data;
 
     const existRoom = await findExistConversation(users);
+    
 
     if(existRoom) {
-      const room = await getMessagesInConversation(existRoom);
-      await socket.emitWithAck("join-room-response", room);
+
+      const messageInRoom = await getMessagesInConversation(existRoom);
+      const response = {
+        message: messageInRoom,
+        room: existRoom
+
+      }
+      await socket.emitWithAck("join-room-response", response);
 
     } else {
       const room = await createConversation(user.email);
