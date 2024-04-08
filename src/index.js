@@ -138,8 +138,14 @@ io.on("connection", async (socket) => {
         users,
         room.body.conversation.id
       );
+
+      const response = {
+
+        userInConversation: userInConversation,
+        room: room.body.conversation.id
+      }
   
-      await socket.emitWithAck("join-room-response", userInConversation);
+      await socket.emitWithAck("join-room-response", response);
     }
 
 
