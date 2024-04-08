@@ -391,6 +391,8 @@ const editMyContributions = async (req, res) => {
 
     const files = req.files["files"];
 
+    console.log(files);
+
     const documentUploadPromises = [];
     const imageUploadPromises = [];
 
@@ -421,6 +423,7 @@ const editMyContributions = async (req, res) => {
             where: { id: existingDocument.id },
             data: {
               path: documentUrl,
+              updatedAt: Date.now()
             },
           });
 
@@ -477,6 +480,7 @@ const editMyContributions = async (req, res) => {
             where: { id: existingImage.id },
             data: {
               path: imageUrl,
+              updatedAt: Date.now()
             },
           });
 
@@ -509,6 +513,22 @@ const editMyContributions = async (req, res) => {
         }
       }
     });
+
+    const documentsToDelete = existingDocuments.filter(doc => !files.some(file => file.originalname === doc.name));
+    documentsToDelete.forEach(async (doc) => {
+      await prisma.documents.delete({
+        where: { id: doc.id },
+      });
+    });
+
+    // Delete old images that were not included in the request
+    const imagesToDelete = existingImages.filter(img => !files.some(file => file.originalname === img.name));
+    imagesToDelete.forEach(async (img) => {
+      await prisma.image.delete({
+        where: { id: img.id },
+      });
+    });
+
 
     // Update contribution title and description
     const updateContribution = await prisma.contribution.update({

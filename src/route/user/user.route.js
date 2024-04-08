@@ -34,8 +34,8 @@ user.put("/resetPassword", resetPassword);
 // Route for uploading submission with middleware
 user.post(
   "/uploadContribution",
-  uploadMiddleware,
   authMiddleware([Role.STUDENT]),
+  uploadMiddleware,
   checkDefaultPassword,
   uploadContribution
 );
