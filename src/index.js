@@ -30,6 +30,7 @@ const {
   getMessagesInConversation,
   editMessage,
   getAllConversationByUserId,
+  findExistConversation,
 } = require("./controller/chat.controller");
 const { authenticateSocket } = require("./middleware/checkRole");
 
@@ -129,12 +130,23 @@ io.on("connection", async (socket) => {
   socket.on("join", async (data) => {
     const { users, conversationId } = data;
 
-    const userInConversation = await addUserIntoConservation(
-      users,
-      conversationId
-    );
+    const existRoom = await findExistConversation(users);
 
-    await socket.emitWithAck("join-room-response", userInConversation);
+    if(existRoom) {
+      const room = await getMessagesInConversation(existRoom);
+      await socket.emitWithAck("join-room-response", room);
+
+    } else {
+      const userInConversation = await addUserIntoConservation(
+        users,
+        conversationId
+      );
+  
+      await socket.emitWithAck("join-room-response", userInConversation);
+    }
+
+
+    
   });
 
   socket.on("message", async (data) => {

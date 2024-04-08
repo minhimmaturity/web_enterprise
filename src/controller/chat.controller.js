@@ -167,6 +167,32 @@ const getAllConversationByUserId = async(userEmail, req, res) => {
   }
 }
 
+const findExistConversation = async (users) => {
+  const userIds = users.split(",").map((id) => id.trim());
+  const userInConversation = [];
+
+  // Fetch user details for each user ID
+  for (const userId of userIds) {
+    const user = await prisma.userOnConservation.findFirst({
+      where: { userId },
+    });
+    userInConversation.push(user);
+  }
+
+  // Check if all users are in the same conversation
+  const conversationIds = userInConversation.map((user) => user?.conversationId);
+  const allInSameConversation = conversationIds.every((conversationId) => conversationId === conversationIds[0]);
+
+  if (allInSameConversation) {
+    // If all users are in the same conversation, return the conversation ID
+    return conversationIds[0];
+  } else {
+    // If users are not in the same conversation, return null or handle as needed
+    return null;
+  }
+};
+
+
 module.exports = {
   createConversation,
   addUserIntoConservation,
@@ -174,5 +200,6 @@ module.exports = {
   validateUserInConversation,
   getMessagesInConversation,
   editMessage,
-  getAllConversationByUserId
+  getAllConversationByUserId,
+  findExistConversation
 };
