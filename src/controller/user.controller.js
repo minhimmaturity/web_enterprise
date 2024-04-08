@@ -521,6 +521,10 @@ const editMyContributions = async (req, res) => {
       await prisma.documents.delete({
         where: { id: doc.id },
       });
+
+      const filePath = `documents/${contributionId}/${doc.name}`;
+      const blob = bucket.file(filePath);
+      await blob.delete();
     });
 
     // Delete old images that were not included in the request
@@ -529,6 +533,10 @@ const editMyContributions = async (req, res) => {
       await prisma.image.delete({
         where: { id: img.id },
       });
+
+      const filePath = `images/${contributionId}/${img.name}`;
+      const blob = bucket.file(filePath);
+      await blob.delete();
     });
 
 
