@@ -13,7 +13,8 @@ const {
   viewMyProfile,
   deleteContribution,
   editMyContributions,
-  getPublishContributions
+  getPublishContributions,
+  viewCoordinatorByFaculty
 } = require("../../controller/user.controller");
 const { uploadMiddleware } = require("../../middleware/upload"); // Import the middleware
 const validate = require("../../middleware/validate");
@@ -78,6 +79,13 @@ user.put(
   uploadMiddleware,
   checkDefaultPassword,
   editMyContributions
+);
+
+user.get(
+  "/viewCoordinator/:facultyId",
+  authMiddleware([Role.STUDENT]),
+  checkDefaultPassword,
+  viewCoordinatorByFaculty
 );
 
 module.exports = user;

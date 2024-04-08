@@ -1,4 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, Role } = require("@prisma/client");
 const bcrypt = require("bcrypt");
 const { sendMailResetPassword } = require("../utils/mail-service");
 const redisClient = require("../utils/connectRedis");
@@ -797,6 +797,22 @@ const deleteContribution = async (req, res) => {
   }
 };
 
+const viewCoordinatorByFaculty = async (req, res) => {
+  try {
+    const {facultyId} = req.params;
+  const coordinator = await prisma.user.findMany({
+    where: {FacultyId: facultyId, role: Role.COORDIONATOR}
+  })
+
+  res.status(StatusCodes.OK).json({
+    coordinator: coordinator
+  })
+  } catch (error) {
+    console.log(error.message);
+  }
+  
+}
+
 module.exports = {
   editUserProfile,
   changePassword,
@@ -808,5 +824,6 @@ module.exports = {
   viewMyProfile,
   deleteContribution,
   editMyContributions,
-  getPublishContributions
+  getPublishContributions,
+  viewCoordinatorByFaculty
 };
