@@ -115,6 +115,7 @@ const getMessagesInConversation = async (conversationId) => {
       },
       select: {
         id: true,
+        text: true,
         sender: {
           select: {
             id: true,
