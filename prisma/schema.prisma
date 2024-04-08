@@ -126,7 +126,7 @@ model Notification {
   content        String
   contributionId String
   userId         String
-  contribution   Contribution @relation(fields: [contributionId], references: [id])
+  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id])
 }
 
