@@ -111,14 +111,16 @@ const getMessagesInConversation = async (conversationId) => {
         conversationId: conversationId,
       },
       orderBy: {
-        createdAt: "asc",
+        createdAt: "desc",
       },
       select: {
         id: true,
         text: true,
+        createdAt: true,
         sender: {
           select: {
             id: true,
+            name: true,
             createAt: true,
           },
         },
@@ -152,20 +154,22 @@ const editMessage = async (messageId, text) => {
   }
 };
 
-const getAllConversationByUserId = async(userEmail, req, res) => {
+const getAllConversationByUserId = async (userEmail, req, res) => {
   try {
-    const user = await prisma.user.findUnique({where: {email: userEmail}})
-    const conversations = await prisma.conversation.findMany({where:{userId: user.id}})
+    const user = await prisma.user.findUnique({ where: { email: userEmail } });
+    const conversations = await prisma.conversation.findMany({
+      where: { userId: user.id },
+    });
 
     const response = {
       statusCode: StatusCodes.OK,
-      conversations: conversations
-    }
-    return response
+      conversations: conversations,
+    };
+    return response;
   } catch (error) {
     console.log(error.message);
   }
-}
+};
 
 const findExistConversation = async (users) => {
   const userIds = users.split(",").map((id) => id.trim());
@@ -180,8 +184,12 @@ const findExistConversation = async (users) => {
   }
 
   // Check if all users are in the same conversation
-  const conversationIds = userInConversation.map((user) => user?.conversationId);
-  const allInSameConversation = conversationIds.every((conversationId) => conversationId === conversationIds[0]);
+  const conversationIds = userInConversation.map(
+    (user) => user?.conversationId
+  );
+  const allInSameConversation = conversationIds.every(
+    (conversationId) => conversationId === conversationIds[0]
+  );
 
   if (allInSameConversation) {
     // If all users are in the same conversation, return the conversation ID
@@ -192,7 +200,6 @@ const findExistConversation = async (users) => {
   }
 };
 
-
 module.exports = {
   createConversation,
   addUserIntoConservation,
@@ -201,5 +208,5 @@ module.exports = {
   getMessagesInConversation,
   editMessage,
   getAllConversationByUserId,
-  findExistConversation
+  findExistConversation,
 };
