@@ -12,17 +12,18 @@ const {
 const validate = require("../middleware/validate");
 const checkDefaultPassword = require("../middleware/checkDefaultPassword");
 const comment = Router();
+const isLocked = require("../middleware/isLocked");
 
 // Other routes...
 
-comment.post("/:contributionId", authMiddleware([Role.COORDIONATOR]), checkDefaultPassword, createComment);
+comment.post("/:contributionId", authMiddleware([Role.COORDIONATOR]), isLocked, checkDefaultPassword, createComment);
 
-comment.get("/:contributionId", authMiddleware([Role.COORDIONATOR]), checkDefaultPassword, getCommentsByContributionId);
+comment.get("/:contributionId", authMiddleware([Role.COORDIONATOR]), isLocked, checkDefaultPassword, getCommentsByContributionId);
 
-comment.get("/:id", authMiddleware([Role.COORDIONATOR]), checkDefaultPassword, getComment);
+comment.get("/:id", authMiddleware([Role.COORDIONATOR]), isLocked, checkDefaultPassword, getComment);
 
-comment.put("/edit/:id", authMiddleware([Role.COORDIONATOR]), checkDefaultPassword, updateComment);
+comment.put("/edit/:id", authMiddleware([Role.COORDIONATOR]), isLocked, checkDefaultPassword, updateComment);
 
-comment.delete("/delete/:id", authMiddleware([Role.COORDIONATOR]), checkDefaultPassword, deleteComment);
+comment.delete("/delete/:id", authMiddleware([Role.COORDIONATOR]), isLocked, checkDefaultPassword, deleteComment);
 
 module.exports = comment;

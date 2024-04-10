@@ -10,22 +10,26 @@ const {
   chooseContribution, downloadContribution
 } = require("../../controller/coordinator.controller");
 const checkDefaultPassword = require("../../middleware/checkDefaultPassword");
+const isLocked = require("../../middleware/isLocked");
 coordinator.use(express.json());
 coordinator.get(
   "/viewContribution",
   authMiddleware([Role.COORDIONATOR]),
+  isLocked,
   checkDefaultPassword,
   viewContribution
 );
 coordinator.get(
   "/downloadContribution",
   authMiddleware([Role.COORDIONATOR]),
+  isLocked,
   checkDefaultPassword,
   downloadContribution
 );
 coordinator.put(
   "/chooseContribution/:Id",
   authMiddleware([Role.COORDIONATOR]),
+  isLocked,
   checkDefaultPassword,
   chooseContribution
 );

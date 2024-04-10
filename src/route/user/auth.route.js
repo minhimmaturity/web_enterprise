@@ -10,7 +10,9 @@ const {
 const { validationResult } = require("express-validator");
 const { publicPosts, privatePosts } = require("../../../database");
 const validate = require("../../middleware/validate");
-
+const isLocked = require("../../middleware/isLocked");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 const auth = Router();
 
 // Middleware to parse JSON in the request body
@@ -37,15 +39,34 @@ auth.post("/register", validate.validateRegister(), (req, res, next) => {
   register(req, res, next);
 });
 
-auth.post("/login", validate.validateLogin(), (req, res, next) => {
-  const errors = validationResult(req);
+auth.post("/login", validate.validateLogin(), async (req, res, next) => {
 
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ errors: errors.array() });
+  try {
+    const { email } = req.body;
+    // Check if the user is locked
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+    console.log(user.is_locked);
+
+    if (user && user.is_locked) {
+      return res.status(403).json({ error: 'Your account is locked.' });
+    }
+
+    // If the user is not locked, proceed with login validation
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+
+    // If there are no validation errors, proceed to the next middleware or route handler
+    login(req, res, next);
+  } catch (error) {
+    console.error('Error during login:', error);
+    return res.status(500).json({ error: 'Failed to perform login' });
   }
-
-  // If there are no validation errors, proceed to the next middleware or route handler
-  login(req, res, next);
 });
+
 
 module.exports = auth;

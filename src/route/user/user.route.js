@@ -19,6 +19,7 @@ const {
 const { uploadMiddleware } = require("../../middleware/upload"); // Import the middleware
 const validate = require("../../middleware/validate");
 const checkDefaultPassword = require("../../middleware/checkDefaultPassword");
+const isLocked = require("../../middleware/isLocked");
 const user = Router();
 
 // Other routes...
@@ -26,6 +27,7 @@ const user = Router();
 user.put(
   "/editProfile",
   authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]),
+  isLocked,
   checkDefaultPassword,
   editUserProfile
 );
@@ -34,9 +36,22 @@ user.post("/otp", sentOtp);
 user.put("/resetPassword", resetPassword);
 
 // Route for uploading submission with middleware
+user.put(
+  "/editProfile",
+  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]),
+  isLocked,
+  checkDefaultPassword,
+  editUserProfile
+);
+user.put("/changePassword", isLocked, changePassword);
+user.post("/otp", isLocked, sentOtp);
+user.put("/resetPassword", isLocked, resetPassword);
+
+// Route for uploading submission with middleware
 user.post(
   "/uploadContribution",
   authMiddleware([Role.STUDENT]),
+  isLocked,
   uploadMiddleware,
   checkDefaultPassword,
   uploadContribution
@@ -45,6 +60,7 @@ user.post(
 user.get(
   "/viewMyContributions",
   authMiddleware([Role.STUDENT]),
+  isLocked,
   checkDefaultPassword,
   viewMyContributions
 );
@@ -52,6 +68,7 @@ user.get(
 user.get(
   "/viewMyContributions/:Id",
   authMiddleware([Role.STUDENT, Role.COORDIONATOR]),
+  isLocked,
   checkDefaultPassword,
   viewContributionDetail
 );
@@ -59,6 +76,7 @@ user.get(
 user.get(
   "/viewProfile",
   authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER]),
+  isLocked,
   checkDefaultPassword,
   viewMyProfile
 );
@@ -70,12 +88,15 @@ user.get(
 user.delete(
   "/deleteContribution/:Id",
   authMiddleware([Role.STUDENT]),
+  isLocked,
+  checkDefaultPassword,
   deleteContribution
 );
 
 user.put(
   "/editMyContribution/:contributionId",
   authMiddleware([Role.STUDENT]),
+  isLocked,
   uploadMiddleware,
   checkDefaultPassword,
   editMyContributions
@@ -84,8 +105,8 @@ user.put(
 user.get(
   "/viewCoordinator/:facultyId",
   authMiddleware([Role.STUDENT]),
+  isLocked,
   checkDefaultPassword,
   viewCoordinatorByFaculty
 );
-
 module.exports = user;
