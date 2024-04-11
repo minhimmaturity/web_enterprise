@@ -249,7 +249,7 @@ const viewAllStudentInFaculty = async (req, res) => {
   });
 
   const students = await prisma.user.findMany({
-    where: { FacultyId: coordinator.FacultyId },
+    where: { FacultyId: coordinator.FacultyId, role: Role.STUDENT },
   });
 
   res.status(StatusCodes.OK).json({
