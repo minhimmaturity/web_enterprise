@@ -7,7 +7,9 @@ const coordinator = express.Router();
 const { validationResult } = require("express-validator");
 const {
   viewContribution,
-  chooseContribution, downloadContribution
+  chooseContribution,
+  downloadContribution,
+  viewAllStudentInFaculty,
 } = require("../../controller/coordinator.controller");
 const checkDefaultPassword = require("../../middleware/checkDefaultPassword");
 const isLocked = require("../../middleware/isLocked");
@@ -32,6 +34,14 @@ coordinator.put(
   isLocked,
   checkDefaultPassword,
   chooseContribution
+);
+
+coordinator.get(
+  "/getAllStudentInFaculty",
+  authMiddleware([Role.COORDIONATOR]),
+  isLocked,
+  checkDefaultPassword,
+  viewAllStudentInFaculty
 );
 
 module.exports = coordinator;

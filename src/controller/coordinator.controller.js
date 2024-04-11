@@ -242,4 +242,24 @@ const downloadContribution = async (req, res) => {
   }
 };
 
-module.exports = { viewContribution, chooseContribution, downloadContribution };
+const viewAllStudentInFaculty = async (req, res) => {
+  const email = req.decodedPayload.data.email;
+  const coordinator = await prisma.user.findFirst({
+    where: { email: email },
+  });
+
+  const students = await prisma.user.findMany({
+    where: { FacultyId: coordinator.FacultyId },
+  });
+
+  res.status(StatusCodes.OK).json({
+    students: students,
+  });
+};
+
+module.exports = {
+  viewContribution,
+  chooseContribution,
+  downloadContribution,
+  viewAllStudentInFaculty,
+};
