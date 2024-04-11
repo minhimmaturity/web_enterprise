@@ -111,7 +111,7 @@ const getMessagesInConversation = async (conversationId) => {
         conversationId: conversationId,
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: "asc",
       },
       select: {
         id: true,
