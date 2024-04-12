@@ -1,0 +1,38 @@
+name: build docker container
+
+on
+  push:
+    branches: 
+      - 'main'
+  workflow_dispatch:
+
+env:
+  REGISTRY: registry.digitalocean.com/web-enterprise
+  USERNAME: trantanminh0603@gmail.com
+  PASSWORD: dop_v1_22aa5385ef46081842cb8bebb2676ffa81b2c35c10021320c32868d50d0857db
+
+jobs:
+  build:
+    runs-on: ubuntu-lastest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Login to image repository
+        run: docker login registry.digitalocean.com
+        with:
+          - registry: ${{ env.REGISTRY }}
+          - Username: ${{ secrets.USERNAME }},
+          - Password: ${{ secrets.PASSWORD }}
+
+      - name: build
+        run: docker build -t registry.digitalocean.com/web-enterprise/web-enterprise-backend:latest .
+      
+      - name: Push Docker image
+        run: docker push registry.digitalocean.com/web-enterprise/web-enterprise-backend:latest
+
+
+
