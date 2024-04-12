@@ -1,6 +1,6 @@
 name: build docker container
 
-on
+on:
   push:
     branches: 
       - 'main'
