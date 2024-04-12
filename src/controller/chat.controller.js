@@ -174,29 +174,32 @@ const getAllConversationByUserId = async (userEmail, req, res) => {
 const findExistConversation = async (users) => {
   const userIds = users.split(",").map((id) => id.trim());
 
-  // Fetch the conversation IDs for each user
-  const conversationIds = await Promise.all(
+  // Fetch all conversation IDs for each user
+  const allConversationIdsByUser = await Promise.all(
     userIds.map(async (userId) => {
-      const user = await prisma.userOnConservation.findFirst({
+      const userConversations = await prisma.userOnConservation.findMany({
         where: { userId },
+        select: { conversationId: true },
       });
-      return user?.conversationId;
+      return userConversations.map((uc) => uc.conversationId);
     })
   );
 
-  // Check if all users have the same conversation ID
-  const allInSameConversation = conversationIds.every(
-    (conversationId) => conversationId === conversationIds[0]
+  // Find the intersection of all conversation IDs
+  const commonConversationIds = allConversationIdsByUser.reduce(
+    (intersection, conversationIds) => {
+      return intersection.filter((id) => conversationIds.includes(id));
+    }
   );
 
-  if (allInSameConversation && conversationIds[0]) {
-    // If all users are in the same conversation, return the conversation ID
-    return conversationIds[0];
+  // If there's a common conversation ID, return it; otherwise, return null
+  if (commonConversationIds.length === 1) {
+    return commonConversationIds[0];
   } else {
-    // If users are not in the same conversation, return null or handle as needed
     return null;
   }
 };
+
 
 
 module.exports = {
