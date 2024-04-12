@@ -20,11 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Login to image repository
-        run: docker login registry.digitalocean.com
-        with:
-          - registry: ${{ env.REGISTRY }}
-          - Username: ${{ secrets.USERNAME }},
-          - Password: ${{ secrets.PASSWORD }}
+        run: docker login registry.digitalocean.com -u ${{ secrets.USERNAME }} -p ${{ secrets.PASSWORD }}
 
       - name: build
         run: docker build -t registry.digitalocean.com/web-enterprise/web-enterprise-backend:latest .
