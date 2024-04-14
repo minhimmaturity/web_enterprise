@@ -178,6 +178,9 @@ const downloadContribution = async (req, res) => {
     const contributions = await prisma.contribution.findMany({
       where: {
         AcademicYearId: academicYear.id,
+        user: {
+          FacultyId: user.FacultyId,
+        },
       },
     });
 
