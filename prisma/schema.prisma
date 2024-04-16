@@ -25,7 +25,7 @@ model User {
   Conversation       Conversation[]       @relation("CreatedBy")
   Message            Message[]
   Notification       Notification[]
-  Faculty            Faculty?             @relation(fields: [FacultyId], references: [id])
+  Faculty            Faculty?             @relation(fields: [FacultyId], references: [id], onDelete: Cascade)
   UserOnConservation UserOnConservation[]
 }
 
