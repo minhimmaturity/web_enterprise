@@ -124,40 +124,32 @@ io.on("connection", async (socket) => {
   // Handle joining a conversation
   socket.on("join", async (data) => {
     const { users } = data;
-
+  
     const existRoom = await findExistConversation(users);
-    
-
-    if(existRoom) {
-
+  
+    if (existRoom) {
+      // If there's an existing conversation involving all users
       const messageInRoom = await getMessagesInConversation(existRoom);
       const response = {
         message: messageInRoom,
         room: existRoom
-
-      }
+      };
       await socket.emitWithAck("join-room-response", response);
-
     } else {
+      // If there's no existing conversation involving all users
       const room = await createConversation(user.email);
-
       const userInConversation = await addUserIntoConservation(
         users,
         room.body.conversation.id
       );
-
       const response = {
-
         userInConversation: userInConversation,
         room: room.body.conversation.id
-      }
-  
+      };
       await socket.emitWithAck("join-room-response", response);
     }
-
-
-    
   });
+  
 
   socket.on("message", async (data) => {
     const { conversationId, userId, text, files } = data;
@@ -209,8 +201,6 @@ io.on("connection", async (socket) => {
 
   socket.on("get-message", async (data) => {
     const { conversationId } = data;
-
-    console.log(socket.rooms);
 
     try {
       const messages = await getMessagesInConversation(conversationId);

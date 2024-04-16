@@ -1,0 +1,15 @@
+version: '3.0'
+
+services:
+  app:
+    image: registry.digitalocean.com/web-enterprise/web-enterprise-backend:latest
+    container_name: web-enterprise-backend
+    build: 
+      context: .
+      dockerfile: dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: "always"
+    
