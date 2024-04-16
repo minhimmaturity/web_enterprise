@@ -445,26 +445,54 @@ const viewAllAccount = async (req, res) => {
   }
 };
 const editUserProfile = async (req, res) => {
-  const { Id } = req.params;
-  const { name, avatar, is_locked } = req.body;
-
   try {
-    const user = await prisma.user.findUnique({ where: { id: Id } });
+    const existingUser = await prisma.user.findUnique({
+      where: { email: req.decodedPayload.data.email },
+    });
 
-    if (!user) {
+    if (!existingUser) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
 
+    const { name } = req.body;
+    let avatar = existingUser.avatar; // Keep the existing avatar URL if no new file is provided
+
+    if (req.file) {
+      // Upload image to Firebase Storage
+      const bucket = admin.storage().bucket();
+      const fileExtension = req.file.mimetype.split('/').pop(); // Get file extension
+      const fileName = `${existingUser.id}.${fileExtension}`; // Use userId as filename
+      const fileUploadPath = `avatars/${fileName}`; // Path in Firebase Storage
+
+      await bucket.upload(req.file.path, {
+        destination: fileUploadPath,
+        metadata: {
+          contentType: req.file.mimetype,
+        },
+      });
+
+      // Get the uploaded file URL
+      avatar = `https://storage.googleapis.com/${bucket.name}/${fileUploadPath}`;
+
+      // Delete the temporary file from the server
+      // fs.unlinkSync(req.file.path); // Uncomment if you want to delete the file
+    }
+
     const updatedUser = await prisma.user.update({
-      where: { id: Id },
-      data: { name, avatar, is_locked },
+      where: {
+        email: req.decodedPayload.data.email,
+      },
+      data: {
+        name,
+        avatar,
+      },
     });
 
     res.status(StatusCodes.OK).json({
       message: "User profile updated successfully",
-      updatedUser,
+      user: updatedUser,
     });
   } catch (error) {
     console.error(error);
@@ -473,6 +501,8 @@ const editUserProfile = async (req, res) => {
     });
   }
 };
+
+module.exports = editUserProfile;
 
 module.exports = {
   createAccountForUser,

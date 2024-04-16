@@ -29,6 +29,7 @@ user.put(
   authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]),
   isLocked,
   checkDefaultPassword,
+  uploadMiddleware,
   editUserProfile
 );
 user.put("/changePassword", changePassword);
@@ -41,6 +42,7 @@ user.put(
   authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]),
   isLocked,
   checkDefaultPassword,
+  uploadMiddleware,
   editUserProfile
 );
 user.put("/changePassword", isLocked, changePassword);

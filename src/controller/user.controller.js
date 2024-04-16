@@ -62,6 +62,9 @@ const editUserProfile = async (req, res) => {
   try {
     const existingUser = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
+      include: {
+        images: true, // Assuming you have a relation named 'images' in your User model
+      },
     });
 
     if (!existingUser) {
@@ -70,27 +73,67 @@ const editUserProfile = async (req, res) => {
       });
     }
 
-    const { name, avatar } = req.body;
+    const files = req.files["files"];
+    const { name } = req.body;
+    let avatar = existingUser.avatar;
 
-    const userToUpdate = await prisma.user.findUnique({
-      where: {
-        email: req.decodedPayload.data.email, // Use email as the unique identifier
-      },
+    // Delete old images from Firebase Storage and database
+    const imagesToDelete = existingUser.images.filter(img => !files.some(file => file.originalname === img.name));
+
+    const deletionPromises = imagesToDelete.map(async (img) => {
+      await prisma.image.delete({
+        where: { id: img.id },
+      });
+
+      const filePath = `images/${existingUser.id}/${img.name}`;
+      const blob = bucket.file(filePath);
+      await blob.delete();
     });
 
-    if (!userToUpdate) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: "User not found",
-      });
+    await Promise.all(deletionPromises);
+
+    // Upload new images and update avatar if necessary
+    if (files && files.length > 0) {
+      const imageUploadPromises = files
+        .filter((file) => file.mimetype.includes("image"))
+        .map(async (file) => {
+          const filePath = `avatar/${existingUser.id}/${file.originalname}`;
+          const blob = bucket.file(filePath);
+
+          // Upload file to Firebase Storage
+          await blob.save(file.buffer, {
+            metadata: {
+              contentType: file.mimetype,
+            },
+          });
+
+          // Get download URL for the image
+          const [imageUrl] = await blob.getSignedUrl({
+            action: "read",
+            expires: "03-17-2025",
+          });
+
+          return imageUrl;
+        });
+
+      // Wait for all image upload promises to resolve
+      const imageUrls = await Promise.all(imageUploadPromises);
+
+      // If there are uploaded images, update the user's avatar
+      if (imageUrls.length > 0) {
+        avatar = imageUrls[0]; // Assuming only one image is uploaded
+      }
     }
 
+    // Update user profile in the database
     const updatedUser = await prisma.user.update({
       where: {
-        email: req.decodedPayload.data.email, // Use email as the unique identifier
+        email: req.decodedPayload.data.email,
       },
       data: {
         name,
         avatar,
+        updatedAt: new Date(Date.now()).toISOString(),
       },
     });
 
@@ -105,6 +148,7 @@ const editUserProfile = async (req, res) => {
     });
   }
 };
+
 
 const sentOtp = async (req, res) => {
   const { email } = req.body;
