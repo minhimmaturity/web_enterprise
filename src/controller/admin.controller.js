@@ -55,7 +55,7 @@ const createAccountForUser = async (req, res) => {
         role: Role.MANAGER,
         default_pasword: passwordAfterHash,
         avatar,
-        FacultyId: faculty,
+        FacultyId: null,
       };
     }
 
@@ -424,8 +424,8 @@ const viewAllAccount = async (req, res) => {
       const academicYears = await prisma.user.findMany({
         ...queryOptions,
         orderBy: {
-          createAt: 'desc' // or 'desc' for descending order
-        }
+          createAt: "desc", // or 'desc' for descending order
+        },
       });
 
       if (academicYears.length === 0) {
@@ -473,8 +473,6 @@ const editUserProfile = async (req, res) => {
     });
   }
 };
-
-
 
 module.exports = {
   createAccountForUser,

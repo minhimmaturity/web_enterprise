@@ -173,15 +173,18 @@ const getAllConversationByUserId = async (userEmail, req, res) => {
 
 const findExistConversation = async (users) => {
   const userIds = users.split(",").map((id) => id.trim());
+  const allConversationIdsByUser = [];
 
   // Fetch all conversation IDs for each user
-  const allConversationIdsByUser = await Promise.all(
+  await Promise.all(
     userIds.map(async (userId) => {
       const userConversations = await prisma.userOnConservation.findMany({
         where: { userId },
         select: { conversationId: true },
       });
-      return userConversations.map((uc) => uc.conversationId);
+      allConversationIdsByUser.push(
+        userConversations.map((conversation) => conversation.conversationId)
+      );
     })
   );
 
@@ -199,8 +202,6 @@ const findExistConversation = async (users) => {
     return null;
   }
 };
-
-
 
 module.exports = {
   createConversation,
