@@ -301,7 +301,11 @@ const viewExceptionReport = async (req, res) => {
         },
       },
       include: {
-        user: true,
+        user: {
+          include: {
+            Faculty: true, 
+          },
+        },
         AcademicYear: true,
       },
     };
