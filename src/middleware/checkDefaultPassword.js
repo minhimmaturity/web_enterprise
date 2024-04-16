@@ -1,4 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, Role } = require("@prisma/client");
 const { StatusCodes } = require("http-status-codes");
 
 const prisma = new PrismaClient();
@@ -17,7 +17,7 @@ const checkDefaultPassword = async (req, res, next) => {
   
   }
   
-  if (user.password === user.default_pasword) {
+  if (user.password === user.default_pasword && user.role != Role.ADMIN) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: "Please change your password",
     });
