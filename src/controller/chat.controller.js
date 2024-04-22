@@ -167,8 +167,9 @@ const getAllConversationByUserId = async (userEmail, req, res) => {
       const latestMessage = await prisma.message.findFirst({
         where: {
           conversationId: conversation.id,
-          orderBy: { createdAt: "desc" },
+          
         },
+        orderBy: "desc"
       });
 
       const anotherPeople = await prisma.userOnConservation.findFirst({where: {conversationId: conversation.id, NOT: {userId: user.id}}})
