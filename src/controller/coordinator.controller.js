@@ -197,18 +197,15 @@ const downloadContribution = async (req, res) => {
       const documents = await prisma.documents.findMany({
         where: { contributionId: contribution.id },
       });
-
       for (let i = 0; i < documents.length; i++) {
         const fileData = await downloadFile(documents[i].path);
-        const fileExtension = path.extname(documents[i].name);
-        const uniqueFileName = `${contribution.title}_${documents[i].name}_${i}${fileExtension}`;
+        const uniqueFileName = `${contribution.title}_${documents[i].name}`;
         zip.addFile(uniqueFileName, fileData);
       }
 
       for (let i = 0; i < images.length; i++) {
         const fileData = await downloadFile(images[i].path);
-        const fileExtension = path.extname(images[i].name);
-        const uniqueFileName = `${contribution.title}_${images[i].name}_${i}${fileExtension}`;
+        const uniqueFileName = `${contribution.title}_${images[i].name}`;
         zip.addFile(uniqueFileName, fileData);
       }
     }
