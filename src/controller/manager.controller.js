@@ -185,8 +185,7 @@ const publishContribution = async (req, res) => {
     res.status(StatusCodes.OK).json({
       message: "Contribution has been published.",
       contribution: updatedContribution,
-      user: contribution.user.name
-    
+      user: contribution.user.name,
     });
   } catch (error) {
     console.error("Error publishing contribution:", error);
@@ -195,7 +194,6 @@ const publishContribution = async (req, res) => {
       .json({ error: "Failed to publish contribution." });
   }
 };
-
 
 const getChosenContributions = async (req, res) => {
   try {
@@ -206,27 +204,27 @@ const getChosenContributions = async (req, res) => {
 
     const queryOptions = {
       where: {
-        is_choosen: true
+        is_choosen: true,
       },
       include: {
         user: {
           select: {
             name: true,
-            Faculty: { select: { name: true } }
-          }
+            Faculty: { select: { name: true } },
+          },
         },
         AcademicYear: true,
         Documents: true,
-        Image: true
+        Image: true,
       },
       take: limit,
-      orderBy: { createdAt: sort === 'asc' ? 'asc' : 'desc' } // Move orderBy inside include
+      orderBy: { createdAt: sort === "asc" ? "asc" : "desc" }, // Move orderBy inside include
     };
 
     while (true) {
       const contributions = await prisma.contribution.findMany({
         ...queryOptions,
-        skip: offset
+        skip: offset,
       });
 
       if (contributions.length === 0) {
@@ -239,8 +237,10 @@ const getChosenContributions = async (req, res) => {
 
     res.status(StatusCodes.OK).json({ allChosenContributions });
   } catch (error) {
-    console.error('Error fetching chosen contributions:', error.message);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to fetch chosen contributions.' });
+    console.error("Error fetching chosen contributions:", error.message);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "Failed to fetch chosen contributions." });
   }
 };
 
@@ -283,7 +283,6 @@ const CountContributionsStats = async (req, res) => {
   }
 };
 
-
 const viewExceptionReport = async (req, res) => {
   try {
     const { in14days } = req.query;
@@ -305,7 +304,7 @@ const viewExceptionReport = async (req, res) => {
       include: {
         user: {
           include: {
-            Faculty: true, 
+            Faculty: true,
           },
         },
         AcademicYear: true,
@@ -349,7 +348,9 @@ const downloadContribution = async (req, res) => {
 
     const academicYear = await prisma.academicYear.findFirst({
       where: {
-        final_closure_date: { gte: new Date(`${currentYear}-01-01T00:00:00.000Z`) } ,
+        final_closure_date: {
+          gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
+        },
       },
     });
 
@@ -370,7 +371,7 @@ const downloadContribution = async (req, res) => {
       },
     });
 
-    if(contributions.length==0){
+    if (contributions.length == 0) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "Empty list",
       });
@@ -383,18 +384,15 @@ const downloadContribution = async (req, res) => {
       const documents = await prisma.documents.findMany({
         where: { contributionId: contribution.id },
       });
-
       for (let i = 0; i < documents.length; i++) {
         const fileData = await downloadFile(documents[i].path);
-        const fileExtension = path.extname(documents[i].name);
-        const uniqueFileName = `${contribution.title}_${documents[i].name}_${i}${fileExtension}`;
+        const uniqueFileName = `${contribution.title}_${documents[i].name}`;
         zip.addFile(uniqueFileName, fileData);
       }
 
       for (let i = 0; i < images.length; i++) {
         const fileData = await downloadFile(images[i].path);
-        const fileExtension = path.extname(images[i].name);
-        const uniqueFileName = `${contribution.title}_${images[i].name}_${i}${fileExtension}`;
+        const uniqueFileName = `${contribution.title}_${images[i].name}`;
         zip.addFile(uniqueFileName, fileData);
       }
     }
@@ -425,9 +423,11 @@ const downloadContribution = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(StatusCodes.BAD_GATEWAY).json({
-      message: "Internal Server Error",
-    });
+    if (!response.ok) {
+      res.status(StatusCodes.BAD_GATEWAY).json({
+        message: "Internal Server Error",
+      });
+    }
   }
 };
 
@@ -438,5 +438,5 @@ module.exports = {
   getChosenContributions,
   viewExceptionReport,
   downloadContribution,
-  CountContributionsStats
+  CountContributionsStats,
 };

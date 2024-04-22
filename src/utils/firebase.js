@@ -32,23 +32,16 @@ const storage = admin.storage().bucket();
 //   }
 // };
 
-const fetchFileFromUrl = async (url) => {
-  try {
-    const response = await fetch(url);
-    const buffer = await response.buffer();
-
-    return { data: buffer };
-  } catch (error) {
-    console.error('Error fetching file:', error);
-    throw new Error("Failed to fetch file");
-  }
-};
-
 const downloadFile = async (downloadUrl) => {
   try {
-    // Fetch the file from the URL
-    const { data } = await fetchFileFromUrl(downloadUrl);
-    return { data };
+    const response = await fetch(downloadUrl);
+    if (!response.ok) {
+      res.status(StatusCodes.BAD_GATEWAY).json({
+        message: "Failed to download file",
+      });
+    }
+    const fileData = await response.buffer();
+    return fileData;
   } catch (error) {
     console.error("Error downloading file:", error);
     throw new Error("Failed to download file");

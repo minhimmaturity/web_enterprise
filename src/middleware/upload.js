@@ -1,15 +1,24 @@
 const multer = require("multer");
-const path = require("path");
-var appRoot = require("app-root-path");
 const { StatusCodes } = require("http-status-codes");
-const { getStorage, ref, uploadBytes } = require("firebase/storage");
 const storage = require("../utils/firebase");
 
 const multerStorage = multer.memoryStorage();
 
 const upload = multer({
   fileFilter: (req, file, cb) => {
-    cb(null, true); // Accept all files
+    // Check if the file is a docx file or an image
+    const allowedExtensions = [".docx", ".jpg", ".jpeg", ".png", ".gif"];
+    const fileExtension =
+      "." + file.originalname.split(".").pop().toLowerCase();
+
+    if (allowedExtensions.includes(fileExtension)) {
+      cb(null, true); // Accept the file
+    } else {
+      cb(
+        new Error("Only .docx, .jpg, .jpeg, .png, and .gif files are allowed"),
+        false
+      ); // Reject the file
+    }
   },
   storage: multerStorage,
 });
