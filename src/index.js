@@ -10,6 +10,7 @@ const { createServer } = require("http");
 
 // Import route handlers and controllers
 const auth = require("./route/user/auth.route");
+const guest = require("./route/user/guest.route");
 const admin = require("./route/user/admin.route");
 const user = require("./route/user/user.route");
 const chat = require("./route/chat/chat.route");
@@ -72,6 +73,7 @@ app.use("/manager", manager);
 app.use("/coordinator", coordinator);
 app.use("/chat", chat);
 app.use("/comment", comment);
+app.use("/guest", guest);
 
 const httpServer = createServer(app);
 

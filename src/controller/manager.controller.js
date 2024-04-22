@@ -185,6 +185,8 @@ const publishContribution = async (req, res) => {
     res.status(StatusCodes.OK).json({
       message: "Contribution has been published.",
       contribution: updatedContribution,
+      user: contribution.user.name
+    
     });
   } catch (error) {
     console.error("Error publishing contribution:", error);

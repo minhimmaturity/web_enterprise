@@ -456,7 +456,7 @@ const editUserProfile = async (req, res) => {
       });
     }
 
-    const { name } = req.body;
+    const { name, is_locked } = req.body;
     let avatar = existingUser.avatar; // Keep the existing avatar URL if no new file is provided
 
     if (req.file) {
@@ -487,6 +487,7 @@ const editUserProfile = async (req, res) => {
       data: {
         name,
         avatar,
+        is_locked,
       },
     });
 
