@@ -8,9 +8,6 @@ const { StatusCodes } = require("http-status-codes");
 const { storage, fetchFileFromFirebase } = require("../utils/firebase");
 const bucket = storage;
 const { sendMailToCoordinator2 } = require("../utils/mail-service");
-const { promise } = require("bcrypt/promises");
-const axios = require("axios");
-const { PassThrough } = require("stream");
 const changePassword = async (req, res) => {
   try {
     const { email, oldPassword, newPassword } = req.body;

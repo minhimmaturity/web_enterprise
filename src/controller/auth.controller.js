@@ -204,6 +204,38 @@ const login = async (req, res) => {
   }
 };
 
+const resetDefaultPassword = async (req, res) => {
+  const { email, default_pasword } = req.params;
+  const { newPassword, reNewPassword } = req.body;
+
+  const user = await prisma.user.findFirst({ where: { email: email } });
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "User not found",
+    });
+  }
+
+  if (user.password === default_pasword && newPassword === reNewPassword) {
+    const passwordAfterHash = await hashPassword(newPassword);
+    const userUpdated = await prisma.user.update({
+      where: { email: email },
+      data: {
+        password: passwordAfterHash,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+
+    return res.status(StatusCodes.OK).json({
+      message: "Password reset successful",
+      user: userUpdated,
+    });
+  } else {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "Invalid password",
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -211,4 +243,5 @@ module.exports = {
   generateRefreshToken,
   refreshToken,
   authToken,
+  resetDefaultPassword,
 };
