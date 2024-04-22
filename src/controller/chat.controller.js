@@ -161,10 +161,25 @@ const getAllConversationByUserId = async (userEmail, req, res) => {
       where: { userId: user.id },
     });
 
-    const response = {
-      statusCode: StatusCodes.OK,
-      conversations: conversations,
-    };
+    let response = [];
+
+    conversations.map(async (conversation) => {
+      const latestMessage = await prisma.message.findFirst({
+        where: {
+          conversationId: conversation.id,
+          orderBy: { createdAt: "desc" },
+        },
+      });
+
+      const eachResponse = {
+        statusCode: StatusCodes.OK,
+        conversation: conversation.id,
+        latestMessage: latestMessage,
+      };
+
+      response.push(eachResponse);
+    });
+
     return response;
   } catch (error) {
     console.log(error.message);
