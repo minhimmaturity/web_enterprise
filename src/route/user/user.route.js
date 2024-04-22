@@ -63,7 +63,7 @@ user.get(
 
 user.get(
   "/viewProfile",
-  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER]),
+  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.GUEST]),
   isLocked,
   checkDefaultPassword,
   viewMyProfile
