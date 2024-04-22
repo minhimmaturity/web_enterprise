@@ -5,7 +5,7 @@ const {
   login,
   authToken,
   refreshToken,
-  editUserProfile,
+  resetDefaultPassword,
 } = require("../../controller/auth.controller");
 const { validationResult } = require("express-validator");
 const { publicPosts, privatePosts } = require("../../../database");
@@ -29,10 +29,16 @@ auth.get("/public", (req, res) => {
 auth.get("/private1", authToken, (req, res) => {
   res.json(privatePosts);
 });
-auth.post("/register", validate.validateRegister(), 
-register);
+auth.post("/register", validate.validateRegister(), register);
 
-auth.post("/login", validate.validateLogin(), isLocked, checkDefaultPassword, login);
+auth.post(
+  "/login",
+  validate.validateLogin(),
+  isLocked,
+  checkDefaultPassword,
+  login
+);
 
+auth.put("/resetDefaultPassword/:email/:default_pasword", resetDefaultPassword);
 
 module.exports = auth;

@@ -8,9 +8,6 @@ const { StatusCodes } = require("http-status-codes");
 const { storage, fetchFileFromFirebase } = require("../utils/firebase");
 const bucket = storage;
 const { sendMailToCoordinator2 } = require("../utils/mail-service");
-const { promise } = require("bcrypt/promises");
-const axios = require('axios');
-const { PassThrough } = require('stream');
 const changePassword = async (req, res) => {
   try {
     const { email, oldPassword, newPassword } = req.body;
@@ -78,7 +75,9 @@ const editUserProfile = async (req, res) => {
     let avatar = existingUser.avatar;
 
     // Delete old images from Firebase Storage and database
-    const imagesToDelete = existingUser.images.filter(img => !files.some(file => file.originalname === img.name));
+    const imagesToDelete = existingUser.images.filter(
+      (img) => !files.some((file) => file.originalname === img.name)
+    );
 
     const deletionPromises = imagesToDelete.map(async (img) => {
       await prisma.image.delete({
@@ -148,7 +147,6 @@ const editUserProfile = async (req, res) => {
     });
   }
 };
-
 
 const sentOtp = async (req, res) => {
   const { email } = req.body;
@@ -469,7 +467,7 @@ const editMyContributions = async (req, res) => {
             where: { id: existingDocument.id },
             data: {
               path: documentUrl,
-              updatedAt: new Date(Date.now()).toISOString()
+              updatedAt: new Date(Date.now()).toISOString(),
             },
           });
 
@@ -526,7 +524,7 @@ const editMyContributions = async (req, res) => {
             where: { id: existingImage.id },
             data: {
               path: imageUrl,
-              updatedAt: new Date(Date.now()).toISOString()
+              updatedAt: new Date(Date.now()).toISOString(),
             },
           });
 
@@ -560,7 +558,9 @@ const editMyContributions = async (req, res) => {
       }
     });
 
-    const documentsToDelete = existingDocuments.filter(doc => !files.some(file => file.originalname === doc.name));
+    const documentsToDelete = existingDocuments.filter(
+      (doc) => !files.some((file) => file.originalname === doc.name)
+    );
     documentsToDelete.forEach(async (doc) => {
       await prisma.documents.delete({
         where: { id: doc.id },
@@ -572,7 +572,9 @@ const editMyContributions = async (req, res) => {
     });
 
     // Delete old images that were not included in the request
-    const imagesToDelete = existingImages.filter(img => !files.some(file => file.originalname === img.name));
+    const imagesToDelete = existingImages.filter(
+      (img) => !files.some((file) => file.originalname === img.name)
+    );
     imagesToDelete.forEach(async (img) => {
       await prisma.image.delete({
         where: { id: img.id },
@@ -582,7 +584,6 @@ const editMyContributions = async (req, res) => {
       const blob = bucket.file(filePath);
       await blob.delete();
     });
-
 
     // Update contribution title and description
     const updateContribution = await prisma.contribution.update({
@@ -598,7 +599,9 @@ const editMyContributions = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
   }
 };
 
@@ -612,27 +615,27 @@ const getPublishContributions = async (req, res) => {
     const queryOptions = {
       where: {
         is_choosen: true,
-        is_public: true // Filter by is_public field
+        is_public: true, // Filter by is_public field
       },
       include: {
         user: {
           select: {
             name: true,
-            Faculty: { select: { name: true } }
-          }
+            Faculty: { select: { name: true } },
+          },
         },
         AcademicYear: true,
         Documents: true,
-        Image: true
+        Image: true,
       },
       take: limit,
-      orderBy: { createdAt: sort === 'asc' ? 'asc' : 'desc' } // Move orderBy inside include
+      orderBy: { createdAt: sort === "asc" ? "asc" : "desc" }, // Move orderBy inside include
     };
 
     while (true) {
       const contributions = await prisma.contribution.findMany({
         ...queryOptions,
-        skip: offset
+        skip: offset,
       });
 
       if (contributions.length === 0) {
@@ -645,11 +648,12 @@ const getPublishContributions = async (req, res) => {
 
     res.status(StatusCodes.OK).json({ allChosenContributions });
   } catch (error) {
-    console.error('Error fetching chosen contributions:', error.message);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Failed to fetch chosen contributions.' });
+    console.error("Error fetching chosen contributions:", error.message);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "Failed to fetch chosen contributions." });
   }
 };
-
 
 const viewMyContributions = async (req, res) => {
   try {
@@ -759,13 +763,13 @@ const viewContributionDetail = async (req, res) => {
       document: document.map((document) => {
         return {
           name: document.name,
-          path: document.path
+          path: document.path,
         };
       }),
       image: image.map((image) => {
         return {
           name: image.name,
-          path: image.path
+          path: image.path,
         };
       }),
       comment: comment.map((comment) => {
@@ -781,7 +785,6 @@ const viewContributionDetail = async (req, res) => {
     });
   }
 };
-
 
 const viewMyProfile = async (req, res) => {
   try {
@@ -815,6 +818,12 @@ const viewMyProfile = async (req, res) => {
 const deleteContribution = async (req, res) => {
   const { Id } = req.params;
 
+  if (!Id) {
+    res.status(StatusCodes.NOT_FOUND).json({
+      message: "id is missing",
+    });
+  }
+
   try {
     const user = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
@@ -826,9 +835,19 @@ const deleteContribution = async (req, res) => {
       });
     }
 
-    await prisma.contribution.delete({
+    const contribution = await prisma.contribution.findFirst({
       where: { id: Id },
     });
+
+    if (!contribution) {
+      res.status(StatusCodes.NOT_FOUND).json({
+        message: "Your contribution not found",
+      });
+    } else {
+      await prisma.contribution.delete({
+        where: { id: Id },
+      });
+    }
 
     res.status(StatusCodes.OK).json({
       message: "Your contribution deleted successfully",
@@ -843,19 +862,18 @@ const deleteContribution = async (req, res) => {
 
 const viewCoordinatorByFaculty = async (req, res) => {
   try {
-    const {facultyId} = req.params;
-  const coordinator = await prisma.user.findMany({
-    where: {FacultyId: facultyId, role: Role.COORDIONATOR}
-  })
+    const { facultyId } = req.params;
+    const coordinator = await prisma.user.findMany({
+      where: { FacultyId: facultyId, role: Role.COORDIONATOR },
+    });
 
-  res.status(StatusCodes.OK).json({
-    coordinator: coordinator
-  })
+    res.status(StatusCodes.OK).json({
+      coordinator: coordinator,
+    });
   } catch (error) {
     console.log(error.message);
   }
-  
-}
+};
 
 module.exports = {
   editUserProfile,
@@ -869,5 +887,5 @@ module.exports = {
   deleteContribution,
   editMyContributions,
   getPublishContributions,
-  viewCoordinatorByFaculty
+  viewCoordinatorByFaculty,
 };

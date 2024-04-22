@@ -128,32 +128,39 @@ const refreshToken = async (token, res, req, next) => {
   try {
     const userInfo = jwt.decode(token, process.env.SECRET_KEY);
     console.log(userInfo);
-    const refreshToken = await redisClient.get("refreshToken" + " " + userInfo.data.email);
+    const refreshToken = await redisClient.get(
+      "refreshToken" + " " + userInfo.data.email
+    );
     console.log(userInfo.data.email);
     try {
-      const refreshedUser = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
-      const newAccessToken = jwt.sign({ data: refreshedUser.data }, process.env.SECRET_KEY, {
-        expiresIn: "3d",
-      });
-      await redisClient.setEx("accessToken" + " " + refreshedUser.data.email, 60*60*24*3 , newAccessToken);
+      const refreshedUser = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_SECRET_KEY
+      );
+      const newAccessToken = jwt.sign(
+        { data: refreshedUser.data },
+        process.env.SECRET_KEY,
+        {
+          expiresIn: "3d",
+        }
+      );
+      await redisClient.setEx(
+        "accessToken" + " " + refreshedUser.data.email,
+        60 * 60 * 24 * 3,
+        newAccessToken
+      );
       req.decodedPayload = refreshedUser;
-      req.newAccessToken = newAccessToken; 
+      req.newAccessToken = newAccessToken;
       res.json({ accessToken: newAccessToken });
     } catch (refreshError) {
-      console.error('Error refreshing token:', refreshError);
-      return res.status(403).json({ error: 'Error refreshing token' });
+      console.error("Error refreshing token:", refreshError);
+      return res.status(403).json({ error: "Error refreshing token" });
     }
   } catch (error) {
-    console.error('Error verifying access token:', error);
-    return res.status(403).json({ error: 'Invalid access token' });
+    console.error("Error verifying access token:", error);
+    return res.status(403).json({ error: "Invalid access token" });
   }
 };
-
-module.exports = refreshToken;
-
-
-module.exports = refreshToken;
-
 
 const login = async (req, res) => {
   try {
@@ -174,7 +181,7 @@ const login = async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
-      return res.status(404).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         message: "Invalid password",
       });
     }
@@ -197,6 +204,38 @@ const login = async (req, res) => {
   }
 };
 
+const resetDefaultPassword = async (req, res) => {
+  const { email, default_pasword } = req.params;
+  const { newPassword, reNewPassword } = req.body;
+
+  const user = await prisma.user.findFirst({ where: { email: email } });
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "User not found",
+    });
+  }
+
+  if (user.password === default_pasword && newPassword === reNewPassword) {
+    const passwordAfterHash = await hashPassword(newPassword);
+    const userUpdated = await prisma.user.update({
+      where: { email: email },
+      data: {
+        password: passwordAfterHash,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+
+    return res.status(StatusCodes.OK).json({
+      message: "Password reset successful",
+      user: userUpdated,
+    });
+  } else {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "Invalid password",
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -204,4 +243,5 @@ module.exports = {
   generateRefreshToken,
   refreshToken,
   authToken,
+  resetDefaultPassword,
 };

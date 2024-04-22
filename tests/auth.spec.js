@@ -35,7 +35,7 @@ describe("Login function", () => {
 
     const req = mockRequest({
       body: {
-        email: user.email,
+        email: "trantanminh0603@gmail.com",
         password: "password123",
       },
     });
@@ -50,7 +50,7 @@ describe("Login function", () => {
   test("Should return status 200 and tokens on successful login", async () => {
     // Mocking user data
     const user = {
-      email: "test7@gmail.com",
+      email: "admin@gmail.com",
       // Assuming password is hashed by bcrypt
       password: await bcrypt.hash("123456aA@", 10),
     };

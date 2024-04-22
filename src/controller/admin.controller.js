@@ -246,6 +246,12 @@ const viewAcademicYears = async (req, res) => {
 //FACULTY CRUD
 const createFaculty = async (req, res) => {
   const { name } = req.body;
+
+  if (!name) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Name is required",
+    });
+  }
   const user = await prisma.user.findUnique({
     where: { email: req.decodedPayload.data.email },
   });
@@ -462,7 +468,7 @@ const editUserProfile = async (req, res) => {
     if (req.file) {
       // Upload image to Firebase Storage
       const bucket = admin.storage().bucket();
-      const fileExtension = req.file.mimetype.split('/').pop(); // Get file extension
+      const fileExtension = req.file.mimetype.split("/").pop(); // Get file extension
       const fileName = `${existingUser.id}.${fileExtension}`; // Use userId as filename
       const fileUploadPath = `avatars/${fileName}`; // Path in Firebase Storage
 
@@ -502,8 +508,6 @@ const editUserProfile = async (req, res) => {
     });
   }
 };
-
-module.exports = editUserProfile;
 
 module.exports = {
   createAccountForUser,
