@@ -23,23 +23,9 @@ const isLocked = require("../../middleware/isLocked");
 const user = Router();
 
 // Other routes...
-
 user.put(
   "/editProfile",
-  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]),
-  isLocked,
-  checkDefaultPassword,
-  uploadMiddleware,
-  editUserProfile
-);
-user.put("/changePassword", changePassword);
-user.post("/otp", sentOtp);
-user.put("/resetPassword", resetPassword);
-
-// Route for uploading submission with middleware
-user.put(
-  "/editProfile",
-  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN]),
+  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.ADMIN, Role.GUEST]),
   isLocked,
   checkDefaultPassword,
   uploadMiddleware,

@@ -48,8 +48,19 @@ admin.post(
 admin.put(
   "/updateAcademicYear/:Id",
   authMiddleware([Role.ADMIN]),
-  updateAcademicYear
+  validate.validateCreateAcademicYear(),
+  (req, res, next) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+
+    updateAcademicYear(req, res, next)
+  }
 );
+
+
 admin.delete(
   "/deleteAcademicYear/:Id",
   authMiddleware([Role.ADMIN]),
@@ -62,9 +73,25 @@ admin.get(
 );
 
 //FACULTY
-admin.post("/createFaculty", authMiddleware([Role.ADMIN]), createFaculty);
-admin.put("/updateFaculty/:Id", authMiddleware([Role.ADMIN]), updateFaculty);
-admin.delete("/deleteFaculty/:Id", authMiddleware([Role.ADMIN]), deleteFaculty);
+admin.post("/createFaculty", authMiddleware([Role.ADMIN]), validate.validateCreateFaculty(),
+  (req, res, next) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    } createFaculty(req, res, next)
+  });
+admin.put("/updateFaculty/:Id", authMiddleware([Role.ADMIN]), validate.validateUpdateFaculty(),
+  (req, res, next) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    } updateFaculty(req, res, next)
+  });
+
+
+// admin.delete("/deleteFaculty/:Id", authMiddleware([Role.ADMIN]), deleteFaculty);
 admin.get("/viewFaculties", authMiddleware([Role.ADMIN]), viewFaculties); //chunk
 
 //Users

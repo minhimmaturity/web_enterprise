@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 const { StatusCodes } = require("http-status-codes");
 const { storage, fetchFileFromFirebase } = require("../utils/firebase");
 const bucket = storage;
-const { sendMailToCoordinator2 } = require("../utils/mail-service");
+const { sendMailToCoordinator} = require("../utils/mail-service");
 const changePassword = async (req, res) => {
   try {
     const { email, oldPassword, newPassword } = req.body;
@@ -386,7 +386,7 @@ const sendNotification = async (contributionId, userId, content) => {
     // Send email notifications to coordinators
     const notificationContent = `A new contribution has been added: "${content}"`;
     coordinators.forEach(async (coordinator) => {
-      await sendMailToCoordinator2(coordinator.email, notificationContent);
+      await sendMailToCoordinator(coordinator.email, notificationContent);
     });
 
     console.log(`Notification sent: ${content}`);

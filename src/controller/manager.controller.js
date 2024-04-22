@@ -2,7 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 const { StatusCodes } = require("http-status-codes");
 const prisma = new PrismaClient();
 const {
-  sendMailToCoordinator2,
+  sendMailToCoordinator,
   sendMailToStudent,
 } = require("../utils/mail-service");
 const admZip = require("adm-zip");
@@ -175,7 +175,7 @@ const publishContribution = async (req, res) => {
     });
     // Send email to each coordinator
     coordinators.forEach(async (coordinator) => {
-      await sendMailToCoordinator2(
+      await sendMailToCoordinator(
         coordinator.email,
         coordinatorNotificationContent
       );

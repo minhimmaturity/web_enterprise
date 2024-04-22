@@ -89,16 +89,24 @@ const chooseContribution = async (req, res) => {
       where: { id: Id },
       //data: { is_choosen: true },
     });
+
+    // Check if contribution with given Id is found
+    if (!chosenContribution) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "Contribution not found",
+      });
+    }
+
     if (chosenContribution.is_choosen === false) {
-      const chosenContribution = await prisma.contribution.update({
+      const updatedContribution = await prisma.contribution.update({
         where: { id: Id },
         data: { is_choosen: true },
       });
       // Fetch contribution content
-      const contributionContent = chosenContribution.title; // Adjust this based on your contribution data structure
+      const contributionContent = updatedContribution.title; // Adjust this based on your contribution data structure
 
       // Get the user ID who uploaded the contribution
-      const userId = chosenContribution.userId;
+      const userId = updatedContribution.userId;
 
       // Fetch user's faculty ID
       const userFaculty = await prisma.user.findUnique({
@@ -132,16 +140,16 @@ const chooseContribution = async (req, res) => {
 
       res.status(StatusCodes.OK).json({
         message: "Contribution chosen successfully",
-        chosenContribution,
+        chosenContribution: updatedContribution,
       });
     } else {
-      const chosenContribution = await prisma.contribution.update({
+      const updatedContribution = await prisma.contribution.update({
         where: { id: Id },
         data: { is_choosen: false },
       });
       res.status(StatusCodes.OK).json({
         message: "Contribution unchosen successfully",
-        chosenContribution,
+        chosenContribution: updatedContribution,
       });
     }
   } catch (error) {
@@ -151,6 +159,7 @@ const chooseContribution = async (req, res) => {
     });
   }
 };
+
 
 const downloadContribution = async (req, res) => {
   try {

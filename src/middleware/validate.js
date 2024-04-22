@@ -1,4 +1,4 @@
-const { check } = require("express-validator");
+const { check, param } = require("express-validator");
 
 let validateRegister = () => {
   return [
@@ -81,7 +81,7 @@ let validateUpdateAcademicYear = () => {
   ];
 };
 
-const validateCreateAcademicYear = () => {
+let validateCreateAcademicYear = () => {
   return [
     // Validation rules for creating academic years
     check("closure_date")
@@ -97,13 +97,55 @@ const validateCreateAcademicYear = () => {
   ];
 };
 
-const validateUploadContribution = () => {
+let validateUploadContribution = () => {
   return [
     check("title").notEmpty().withMessage("Title is required"),
     check("description").notEmpty().withMessage("Description is required"),
   ];
 };
+//Faculty
+let validateCreateFaculty = () => {
+  return [
+    check("name")
+      .notEmpty()
+      .withMessage("Name is required")
+      .isString()
+      .withMessage("Name must be a string"),
+  ];
+};
 
+let validateUpdateFaculty = () => {
+  return [
+    check("name")
+      .optional()
+      .notEmpty()
+      .withMessage("Name is required")
+      .isString()
+      .withMessage("Name must be a string"),
+  ];
+};
+
+let validateCreateComment = () => {
+  return [
+    check("content")
+      .optional()
+      .notEmpty()
+      .withMessage("Name is required")
+      .isString()
+      .withMessage("Name must be string"),
+  ];
+};
+
+let validateUpdateComment = () => {
+  return [
+    check("content")
+      .optional()
+      .notEmpty()
+      .withMessage("Name is required")
+      .isString()
+      .withMessage("Name must be string"),
+  ];
+};
 let validate = {
   validateRegister: validateRegister,
   validateLogin: validateLogin,
@@ -111,6 +153,10 @@ let validate = {
   validateCreateAcademicYear: validateCreateAcademicYear,
   validateUpdateAcademicYear: validateUpdateAcademicYear,
   validateUploadContribution: validateUploadContribution,
+  validateCreateFaculty: validateCreateFaculty,
+  validateUpdateFaculty: validateUpdateFaculty,
+  validateCreateComment: validateCreateComment,
+  validateUpdateComment: validateUpdateComment
 };
 
 module.exports = validate;

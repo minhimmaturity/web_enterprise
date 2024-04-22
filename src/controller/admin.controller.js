@@ -121,7 +121,6 @@ const createAcademicYear = async (req, res) => {
     });
   }
 };
-
 const updateAcademicYear = async (req, res) => {
   const { Id } = req.params;
   const { closure_date, final_closure_date } = req.body;
@@ -202,6 +201,7 @@ const deleteAcademicYear = async (req, res) => {
     });
   }
 };
+
 
 const viewAcademicYears = async (req, res) => {
   try {
@@ -302,11 +302,20 @@ const updateFaculty = async (req, res) => {
   const { Id } = req.params;
 
   try {
+    const checkFaculty = await prisma.faculty.findFirst({
+      where: { id: Id },
+    });
+
+   
+    if (!checkFaculty) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "Faculty not found",
+      });
+    }
     const faculty = await prisma.faculty.update({
       where: { id: Id },
       data: { name },
     });
-
     res.status(StatusCodes.OK).json({
       message: "Faculty updated successfully",
       faculty,
@@ -319,24 +328,25 @@ const updateFaculty = async (req, res) => {
   }
 };
 
-const deleteFaculty = async (req, res) => {
-  const { Id } = req.params;
+// const deleteFaculty = async (req, res) => {
+//   const { Id } = req.params;
 
-  try {
-    await prisma.faculty.delete({
-      where: { id: Id },
-    });
+//   try {
+    
+//     await prisma.faculty.delete({
+//       where: { id: Id },
+//     });
 
-    res.status(StatusCodes.OK).json({
-      message: "Faculty deleted successfully",
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(StatusCodes.BAD_GATEWAY).json({
-      message: "Internal Server Error",
-    });
-  }
-};
+//     res.status(StatusCodes.OK).json({
+//       message: "Faculty deleted successfully",
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(StatusCodes.BAD_GATEWAY).json({
+//       message: "Internal Server Error",
+//     });
+//   }
+// };
 
 const viewFaculties = async (req, res) => {
   try {
@@ -451,55 +461,26 @@ const viewAllAccount = async (req, res) => {
   }
 };
 const editUserProfile = async (req, res) => {
-  try {
-    const existingUser = await prisma.user.findUnique({
-      where: { email: req.decodedPayload.data.email },
-    });
+  const { Id } = req.params;
+  const { name, is_locked } = req.body;
 
-    if (!existingUser) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: Id } });
+
+    if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
 
-    const { name, is_locked } = req.body;
-    let avatar = existingUser.avatar; // Keep the existing avatar URL if no new file is provided
-
-    if (req.file) {
-      // Upload image to Firebase Storage
-      const bucket = admin.storage().bucket();
-      const fileExtension = req.file.mimetype.split("/").pop(); // Get file extension
-      const fileName = `${existingUser.id}.${fileExtension}`; // Use userId as filename
-      const fileUploadPath = `avatars/${fileName}`; // Path in Firebase Storage
-
-      await bucket.upload(req.file.path, {
-        destination: fileUploadPath,
-        metadata: {
-          contentType: req.file.mimetype,
-        },
-      });
-
-      // Get the uploaded file URL
-      avatar = `https://storage.googleapis.com/${bucket.name}/${fileUploadPath}`;
-
-      // Delete the temporary file from the server
-      // fs.unlinkSync(req.file.path); // Uncomment if you want to delete the file
-    }
-
     const updatedUser = await prisma.user.update({
-      where: {
-        email: req.decodedPayload.data.email,
-      },
-      data: {
-        name,
-        avatar,
-        is_locked,
-      },
+      where: { id: Id },
+      data: { name, is_locked},
     });
 
     res.status(StatusCodes.OK).json({
       message: "User profile updated successfully",
-      user: updatedUser,
+      updatedUser,
     });
   } catch (error) {
     console.error(error);
@@ -514,7 +495,6 @@ module.exports = {
   createAcademicYear,
   createFaculty,
   updateFaculty,
-  deleteFaculty,
   viewFaculties,
   updateAcademicYear,
   deleteAcademicYear,
