@@ -371,7 +371,7 @@ const downloadContribution = async (req, res) => {
       },
     });
 
-    if (contributions.length === 0) {
+    if (contributions.length == 0) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "Empty list",
       });

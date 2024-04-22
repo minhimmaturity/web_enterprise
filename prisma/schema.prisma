@@ -45,7 +45,7 @@ model Faculty {
   createBy  String
   createAt  DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Admin     Admin    @relation(fields: [createBy], references: [id], onDelete: Cascade)
+  Admin     Admin    @relation(fields: [createBy], references: [id])
   User      User[]
 }
 
@@ -125,9 +125,9 @@ model Notification {
   id             String       @id @default(uuid())
   content        String
   contributionId String
-  userId         String
-  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id])
+  userId         String?
+  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: NoAction)
+  user           User?        @relation(fields: [userId], references: [id])
 }
 
 model Documents {
