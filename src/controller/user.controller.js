@@ -840,6 +840,27 @@ const countNotifications = async (req, res) => {
   }
 };
 
+const getAllNotifications = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: req.decodedPayload.data.email },
+    });
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
+    const notifications = await prisma.notification.findMany({
+      where: { userId: user.id },
+    });
+    res.status(StatusCodes.OK).json({
+      notifications: notifications,
+    });
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
 module.exports = {
   editUserProfile,
   changePassword,
@@ -853,5 +874,6 @@ module.exports = {
   editMyContributions,
   getPublishContributions,
   viewCoordinatorByFaculty,
-  countNotifications
+  countNotifications,
+  getAllNotifications
 };
