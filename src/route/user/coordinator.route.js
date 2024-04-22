@@ -10,6 +10,7 @@ const {
   downloadContribution,
   viewAllStudentInFaculty,
 } = require("../../controller/coordinator.controller");
+const {countNotifications} = require("../../controller/user.controller")
 const validate = require("../../middleware/validate");
 
 const checkDefaultPassword = require("../../middleware/checkDefaultPassword");
@@ -44,5 +45,13 @@ coordinator.get(
   checkDefaultPassword,
   viewAllStudentInFaculty
 );
+
+coordinator.get(
+  "/countNotifications",
+  authMiddleware([Role.COORDIONATOR]),
+  isLocked,
+  checkDefaultPassword,
+  countNotifications
+)
 
 module.exports = coordinator;

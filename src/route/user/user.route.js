@@ -55,7 +55,7 @@ user.get(
 
 user.get(
   "/viewMyContributions/:Id",
-  authMiddleware([Role.STUDENT, Role.COORDIONATOR]),
+  authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.GUEST]),
   isLocked,
   checkDefaultPassword,
   viewContributionDetail

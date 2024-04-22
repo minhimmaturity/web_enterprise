@@ -64,8 +64,8 @@ model UserOnConservation {
   conversationId String
   createAt       DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  Conversation   Conversation @relation(fields: [conversationId], references: [id])
-  user           User         @relation(fields: [userId], references: [id])
+  Conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: NoAction)
+  user           User         @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@id([userId, conversationId])
 }
@@ -77,8 +77,8 @@ model Message {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   userId         String
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  sender         User         @relation(fields: [userId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AcademicYear {

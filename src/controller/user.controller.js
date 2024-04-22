@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 const { StatusCodes } = require("http-status-codes");
 const { storage, fetchFileFromFirebase } = require("../utils/firebase");
 const bucket = storage;
-const { sendMailToCoordinator} = require("../utils/mail-service");
+const { sendMailToCoordinator } = require("../utils/mail-service");
 const changePassword = async (req, res) => {
   try {
     const { email, oldPassword, newPassword } = req.body;
@@ -302,7 +302,10 @@ const processImages = async (contributionId, files, existingImages) => {
   const imageUploadPromises = [];
 
   for (const file of files) {
-    if (file.mimetype.includes("image")||file.mimetype==="application/octet-stream") {
+    if (
+      file.mimetype.includes("image") ||
+      file.mimetype === "application/octet-stream"
+    ) {
       const existingImage = existingImages.find(
         (img) => img.name === file.originalname
       );
@@ -350,7 +353,10 @@ const processDocuments = async (contributionId, files, existingDocuments) => {
   const documentUploadPromises = [];
 
   for (const file of files) {
-    if (file.mimetype.includes("application")&& file.mimetype !== "application/octet-stream") {
+    if (
+      file.mimetype.includes("application") &&
+      file.mimetype !== "application/octet-stream"
+    ) {
       const existingDocument = existingDocuments.find(
         (doc) => doc.name === file.originalname
       );
@@ -810,6 +816,30 @@ const viewCoordinatorByFaculty = async (req, res) => {
   }
 };
 
+const countNotifications = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: req.decodedPayload.data.email },
+    });
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
+
+    const notifications = await prisma.notification.findMany({
+      where: { userId: user.id },
+    });
+
+    res.status(StatusCodes.OK).json({
+      count: notifications.length,
+    });
+  } catch (error) {
+    console.log(error.message);
+  }
+};
+
 module.exports = {
   editUserProfile,
   changePassword,
@@ -823,4 +853,5 @@ module.exports = {
   editMyContributions,
   getPublishContributions,
   viewCoordinatorByFaculty,
+  countNotifications
 };
