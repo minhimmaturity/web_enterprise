@@ -169,18 +169,17 @@ const getAllConversationByUserId = async (userEmail, req, res) => {
           conversationId: conversation.id,
           
         },
-        orderBy: "desc"
+        orderBy: {createdAt: "desc"}
       });
 
       const anotherPeople = await prisma.userOnConservation.findFirst({where: {conversationId: conversation.id, NOT: {userId: user.id}}})
 
-
-      const user = await prisma.user.findOne({where: {id: anotherPeople.id}})
+      const userInChat = await prisma.user.findFirst({where: {id: anotherPeople.id}})
 
       const eachResponse = {
         statusCode: StatusCodes.OK,
         conversation: conversation.id,
-        name: user.name,
+        name: userInChat.name,
         latestMessage: latestMessage,
       };
 
