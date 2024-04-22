@@ -172,7 +172,7 @@ const getAllConversationByUserId = async (userEmail, req, res) => {
       });
 
       const userInChat = await prisma.user.findFirst({
-        where: { id: anotherPeople.id }
+        where: { id: anotherPeople.userId }
       });
 
       return {
@@ -183,7 +183,6 @@ const getAllConversationByUserId = async (userEmail, req, res) => {
       };
     }));
 
-    console.log(response); // Check the response array
     return response;
   } catch (error) {
     console.log(error.message);
