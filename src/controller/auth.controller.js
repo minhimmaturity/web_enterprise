@@ -215,7 +215,9 @@ const resetDefaultPassword = async (req, res) => {
     });
   }
 
-  if (user.password === default_pasword && newPassword === reNewPassword) {
+  const passwordMatch = await bcrypt.compare(default_pasword, user.password);
+
+  if (passwordMatch && newPassword === reNewPassword) {
     const passwordAfterHash = await hashPassword(newPassword);
     const userUpdated = await prisma.user.update({
       where: { email: email },
