@@ -161,36 +161,35 @@ const getAllConversationByUserId = async (userEmail, req, res) => {
       where: { userId: user.id },
     });
 
-    let response = [];
-
-    conversations.map(async (conversation) => {
+    const response = await Promise.all(conversations.map(async (conversation) => {
       const latestMessage = await prisma.message.findFirst({
-        where: {
-          conversationId: conversation.id,
-          
-        },
-        orderBy: {createdAt: "desc"}
+        where: { conversationId: conversation.id },
+        orderBy: { createdAt: "desc" }
       });
 
-      const anotherPeople = await prisma.userOnConservation.findFirst({where: {conversationId: conversation.id, NOT: {userId: user.id}}})
+      const anotherPeople = await prisma.userOnConservation.findFirst({
+        where: { conversationId: conversation.id, NOT: { userId: user.id } }
+      });
 
-      const userInChat = await prisma.user.findFirst({where: {id: anotherPeople.id}})
+      const userInChat = await prisma.user.findFirst({
+        where: { id: anotherPeople.id }
+      });
 
-      const eachResponse = {
+      return {
         statusCode: StatusCodes.OK,
         conversation: conversation.id,
         name: userInChat.name,
         latestMessage: latestMessage,
       };
+    }));
 
-      response.push(eachResponse);
-    });
-
+    console.log(response); // Check the response array
     return response;
   } catch (error) {
     console.log(error.message);
   }
 };
+
 
 const findExistConversation = async (users) => {
   const userIds = users.split(",").map((id) => id.trim());
