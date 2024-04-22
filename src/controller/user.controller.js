@@ -350,7 +350,7 @@ const processDocuments = async (contributionId, files, existingDocuments) => {
   const documentUploadPromises = [];
 
   for (const file of files) {
-    if (file.mimetype.includes("application")) {
+    if (file.mimetype.includes("application")&& file.mimetype !== "application/octet-stream") {
       const existingDocument = existingDocuments.find(
         (doc) => doc.name === file.originalname
       );
