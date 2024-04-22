@@ -298,6 +298,53 @@ const uploadContribution = async (req, res) => {
       .json({ error: error.message });
   }
 };
+const processImages = async (contributionId, files, existingImages) => {
+  const imageUploadPromises = [];
+
+  for (const file of files) {
+    if (file.mimetype.includes("image")||file.mimetype==="application/octet-stream") {
+      const existingImage = existingImages.find(
+        (img) => img.name === file.originalname
+      );
+
+      const filePath = `images/${contributionId}/${file.originalname}`;
+      const blob = bucket.file(filePath);
+
+      await blob.save(file.buffer, {
+        metadata: {
+          contentType: file.mimetype,
+        },
+      });
+
+      const [imageUrl] = await blob.getSignedUrl({
+        action: "read",
+        expires: "03-17-2025",
+      });
+
+      if (existingImage) {
+        await prisma.image.update({
+          where: { id: existingImage.id },
+          data: {
+            path: imageUrl,
+            updatedAt: new Date(Date.now()).toISOString(),
+          },
+        });
+      } else {
+        await prisma.image.create({
+          data: {
+            name: file.originalname,
+            path: imageUrl,
+            contributionId: contributionId,
+          },
+        });
+      }
+
+      imageUploadPromises.push(imageUrl);
+    }
+  }
+
+  return imageUploadPromises;
+};
 
 const processDocuments = async (contributionId, files, existingDocuments) => {
   const documentUploadPromises = [];
@@ -345,54 +392,6 @@ const processDocuments = async (contributionId, files, existingDocuments) => {
   }
 
   return documentUploadPromises;
-};
-
-const processImages = async (contributionId, files, existingImages) => {
-  const imageUploadPromises = [];
-
-  for (const file of files) {
-    if (file.mimetype.includes("image")) {
-      const existingImage = existingImages.find(
-        (img) => img.name === file.originalname
-      );
-
-      const filePath = `images/${contributionId}/${file.originalname}`;
-      const blob = bucket.file(filePath);
-
-      await blob.save(file.buffer, {
-        metadata: {
-          contentType: file.mimetype,
-        },
-      });
-
-      const [imageUrl] = await blob.getSignedUrl({
-        action: "read",
-        expires: "03-17-2025",
-      });
-
-      if (existingImage) {
-        await prisma.image.update({
-          where: { id: existingImage.id },
-          data: {
-            path: imageUrl,
-            updatedAt: new Date(Date.now()).toISOString(),
-          },
-        });
-      } else {
-        await prisma.image.create({
-          data: {
-            name: file.originalname,
-            path: imageUrl,
-            contributionId: contributionId,
-          },
-        });
-      }
-
-      imageUploadPromises.push(imageUrl);
-    }
-  }
-
-  return imageUploadPromises;
 };
 
 const deleteUnusedDocuments = async (
