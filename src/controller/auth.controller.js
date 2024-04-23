@@ -56,7 +56,7 @@ const generateAccessToken = async (name, email, role) => {
     const token = jwt.sign(
       { data: { name, email, role } },
       process.env.SECRET_KEY,
-      { expiresIn: "2d" }
+      { expiresIn: "15s" }
     );
 
     await redisClient.setEx("token" + " " + email, 60 * 60 * 24 * 2, token);
