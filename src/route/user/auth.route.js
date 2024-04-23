@@ -11,8 +11,9 @@ const { validationResult } = require("express-validator");
 const { publicPosts, privatePosts } = require("../../../database");
 const validate = require("../../middleware/validate");
 const isLocked = require("../../middleware/isLocked");
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, Role } = require("@prisma/client");
 const checkDefaultPassword = require("../../middleware/checkDefaultPassword");
+const { authMiddleware } = require("../../middleware/checkRole");
 const prisma = new PrismaClient();
 const auth = Router();
 
@@ -38,6 +39,8 @@ auth.post(
   checkDefaultPassword,
   login
 );
+
+auth.get("/refreshAccessToken", authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.GUEST, Role.ADMIN]), refreshToken)
 
 auth.put("/resetDefaultPassword/:email/:default_pasword", resetDefaultPassword);
 
