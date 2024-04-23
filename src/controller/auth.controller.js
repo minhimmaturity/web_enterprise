@@ -137,8 +137,13 @@ const refreshToken = async (token, res, req, next) => {
         refreshToken,
         process.env.REFRESH_SECRET_KEY
       );
+
+      const user = await prisma.user.findFirst({where: {email: refreshedUser.data.email}})
+      const name = user.name
+      const email = user.email
+      const role = user.role
       const newAccessToken = jwt.sign(
-        { data: refreshedUser.data },
+        { data: {name, email, role} },
         process.env.SECRET_KEY,
         {
           expiresIn: "3d",
