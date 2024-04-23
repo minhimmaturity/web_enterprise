@@ -146,7 +146,7 @@ const refreshToken = async (token, res, req, next) => {
         { data: {name, email, role} },
         process.env.SECRET_KEY,
         {
-          expiresIn: "15s",
+          expiresIn: "3d",
         }
       );
       await redisClient.setEx(
