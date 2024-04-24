@@ -285,8 +285,7 @@ const processImages = async (contributionId, files, existingImages) => {
 
   for (const file of files) {
     if (
-      file.mimetype.includes("image") ||
-      file.mimetype === "application/octet-stream"
+      file.mimetype.includes("image") 
     ) {
       const existingImage = existingImages.find(
         (img) => img.name === file.originalname
