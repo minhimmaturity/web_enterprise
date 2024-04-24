@@ -7,7 +7,6 @@ const { validationResult } = require("express-validator");
 const {
   viewContribution,
   chooseContribution,
-  downloadContribution,
   viewAllStudentInFaculty,
 } = require("../../controller/coordinator.controller");
 const {countNotifications, getAllNotifications} = require("../../controller/user.controller")
@@ -22,13 +21,6 @@ coordinator.get(
   isLocked,
   checkDefaultPassword,
   viewContribution
-);
-coordinator.get(
-  "/downloadContribution",
-  authMiddleware([Role.COORDIONATOR]),
-  isLocked,
-  checkDefaultPassword,
-  downloadContribution
 );
 coordinator.put(
   "/chooseContribution/:Id",

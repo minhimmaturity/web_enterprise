@@ -190,6 +190,5 @@ const viewAllStudentInFaculty = async (req, res) => {
 module.exports = {
   viewContribution,
   chooseContribution,
-  downloadContribution,
   viewAllStudentInFaculty,
 };
