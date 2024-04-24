@@ -522,22 +522,30 @@ const downloadContribution = async (req, res) => {
 
     // Add files to zip
     for (const contribution of contributions) {
+      // Create a folder for each contribution
+      const contributionFolderName = `${contribution.title}_${contribution.id}`;
+      zip.addLocalFolder(contributionFolderName);
+
       const images = await prisma.image.findMany({
         where: { contributionId: contribution.id },
       });
+
       const documents = await prisma.documents.findMany({
         where: { contributionId: contribution.id },
       });
-      for (let i = 0; i < documents.length; i++) {
-        const fileData = await downloadFile(documents[i].path);
-        const uniqueFileName = `${contribution.title}_${documents[i].name}`;
-        zip.addFile(uniqueFileName, fileData);
+
+      // Add images to contribution folder
+      for (let i = 0; i < images.length; i++) {
+        const imageFilePath = path.join(contributionFolderName, images[i].name);
+        const imageData = await downloadFile(images[i].path);
+        zip.addFile(imageFilePath, imageData);
       }
 
-      for (let i = 0; i < images.length; i++) {
-        const fileData = await downloadFile(images[i].path);
-        const uniqueFileName = `${contribution.title}_${images[i].name}`;
-        zip.addFile(uniqueFileName, fileData);
+      // Add documents to contribution folder
+      for (let i = 0; i < documents.length; i++) {
+        const documentFilePath = path.join(contributionFolderName, documents[i].name);
+        const documentData = await downloadFile(documents[i].path);
+        zip.addFile(documentFilePath, documentData);
       }
     }
 
@@ -576,6 +584,7 @@ const downloadContribution = async (req, res) => {
     }
   }
 };
+
 
 
 
