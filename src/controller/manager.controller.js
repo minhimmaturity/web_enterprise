@@ -10,6 +10,7 @@ const { downloadFile } = require("../utils/firebase");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const { promisify } = require('util');
 
 const DOWNLOAD_DIR = os.tmpdir();
 
@@ -543,13 +544,24 @@ const downloadContribution = async (req, res) => {
     // Set default file name for download
     const defaultFileName = `output.zip`;
 
-    // Send the file for download with appropriate headers
+    // Write zip to a temporary file
+    const tempFilePath = path.join(__dirname, defaultFileName);
+    zip.writeZip(tempFilePath);
+
+    // Stream the file to the response
+    const fileStream = fs.createReadStream(tempFilePath);
+    fileStream.on('end', () => {
+      // Delete the temporary file after sending
+      fs.unlinkSync(tempFilePath);
+    });
+
+    // Set appropriate headers and send the file
     res.set({
       'Content-Type': 'application/zip',
       'Content-Disposition': `attachment; filename="${defaultFileName}"`,
     });
 
-    res.send(zip.toBuffer());
+    fileStream.pipe(res);
 
   } catch (error) {
     console.error(error);
