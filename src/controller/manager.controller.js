@@ -200,7 +200,7 @@ const getChosenContributions = async (req, res) => {
     const limit = 10;
     let offset = 0;
     let allChosenContributions = [];
-    const { sort } = req.query;
+    const { sort, title } = req.query; // Destructure 'title' from req.query
 
     const queryOptions = {
       where: {
@@ -218,8 +218,17 @@ const getChosenContributions = async (req, res) => {
         Image: true,
       },
       take: limit,
-      orderBy: { createdAt: sort === "asc" ? "asc" : "desc" }, // Move orderBy inside include
+      orderBy: { createdAt: sort === "asc" ? "asc" : "desc" },
     };
+
+    if (title) {
+      queryOptions.where = {
+        title: {
+          contains: title,
+          mode: "insensitive", // Support case-insensitive filtering
+        },
+      };
+    }
 
     while (true) {
       const contributions = await prisma.contribution.findMany({
