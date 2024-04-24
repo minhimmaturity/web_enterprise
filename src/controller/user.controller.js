@@ -68,25 +68,10 @@ const editUserProfile = async (req, res) => {
     }
 
     const files = req.files["files"];
+
+    console.log(files);
     const { name } = req.body;
     let avatar = existingUser.avatar;
-
-    // Delete old images from Firebase Storage and database
-    const imagesToDelete = existingUser.images.filter(
-      (img) => !files.some((file) => file.originalname === img.name)
-    );
-
-    const deletionPromises = imagesToDelete.map(async (img) => {
-      await prisma.image.delete({
-        where: { id: img.id },
-      });
-
-      const filePath = `images/${existingUser.id}/${img.name}`;
-      const blob = bucket.file(filePath);
-      await blob.delete();
-    });
-
-    await Promise.all(deletionPromises);
 
     // Upload new images and update avatar if necessary
     if (files && files.length > 0) {
@@ -144,6 +129,8 @@ const editUserProfile = async (req, res) => {
     });
   }
 };
+
+
 
 const sentOtp = async (req, res) => {
   const { email } = req.body;
