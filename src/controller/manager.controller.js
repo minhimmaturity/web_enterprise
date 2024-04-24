@@ -228,6 +228,7 @@ const getChosenContributions = async (req, res) => {
           contains: title,
           mode: "insensitive", // Support case-insensitive filtering
         },
+        is_choosen: true,
       };
     }
 
@@ -418,7 +419,7 @@ const downloadContribution = async (req, res) => {
     }
 
     //download storage
-    var DOWNLOAD_DIR = path.join(
+    const DOWNLOAD_DIR = path.join(
       process.env.HOME || process.env.USERPROFILE,
       "downloads/"
     );
