@@ -522,37 +522,22 @@ const downloadContribution = async (req, res) => {
 
     // Add files to zip
     for (const contribution of contributions) {
-      // Create a folder for each contribution
-      const contributionFolderName = `${contribution.title}_${contribution.id}`;
-      const contributionFolderPath = path.join(
-        os.tmpdir(),
-        contributionFolderName
-      );
-      zip.addLocalFolder(contributionFolderPath);
-
       const images = await prisma.image.findMany({
         where: { contributionId: contribution.id },
       });
-
       const documents = await prisma.documents.findMany({
         where: { contributionId: contribution.id },
       });
-
-      // Add images to contribution folder
-      for (let i = 0; i < images.length; i++) {
-        const imageFilePath = path.join(contributionFolderName, images[i].name);
-        const imageData = await downloadFile(images[i].path);
-        zip.addFile(imageFilePath, imageData);
+      for (let i = 0; i < documents.length; i++) {
+        const fileData = await downloadFile(documents[i].path);
+        const uniqueFileName = `${contribution.title}_${documents[i].name}`;
+        zip.addFile(uniqueFileName, fileData);
       }
 
-      // Add documents to contribution folder
-      for (let i = 0; i < documents.length; i++) {
-        const documentFilePath = path.join(
-          contributionFolderName,
-          documents[i].name
-        );
-        const documentData = await downloadFile(documents[i].path);
-        zip.addFile(documentFilePath, documentData);
+      for (let i = 0; i < images.length; i++) {
+        const fileData = await downloadFile(images[i].path);
+        const uniqueFileName = `${contribution.title}_${images[i].name}`;
+        zip.addFile(uniqueFileName, fileData);
       }
     }
 
@@ -565,21 +550,22 @@ const downloadContribution = async (req, res) => {
 
     // Stream the file to the response
     const fileStream = fs.createReadStream(tempFilePath);
-    fileStream.on("end", () => {
+    fileStream.on('end', () => {
       // Delete the temporary file after sending
       fs.unlinkSync(tempFilePath);
     });
 
     // Set appropriate headers and send the file
     res.set({
-      "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="${defaultFileName}"`,
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${defaultFileName}"`,
     });
 
     fileStream.pipe(res);
+
   } catch (error) {
     console.error(error);
-    if (error.code === "ENOENT") {
+    if (error.code === 'ENOENT') {
       res.status(StatusCodes.NOT_FOUND).json({
         message: "File not found",
       });
