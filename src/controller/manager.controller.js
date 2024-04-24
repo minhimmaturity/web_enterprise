@@ -536,6 +536,24 @@ const getAllCoordinatorInFaculty = async (req, res) => {
   }
 };
 
+const totalCoordinators = async (req, res) => {
+  try {
+    const coordinators = await prisma.user.findMany({
+      where: {
+        role: Role.COORDIONATOR,
+      },
+    });
+    res.status(StatusCodes.OK).json({
+      totalCoordinators: coordinators.length,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(StatusCodes.BAD_GATEWAY).json({
+      message: "Internal Server Error",
+    });
+  }
+}
+
 
 
 
@@ -549,5 +567,6 @@ module.exports = {
   CountContributionsStats,
   viewAllNewContributionsToday,
   getTotalContribution,
-  getAllCoordinatorInFaculty
+  getAllCoordinatorInFaculty,
+  totalCoordinators
 };

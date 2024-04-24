@@ -10,7 +10,8 @@ const {
   getChosenContributions,
   viewAllNewContributionsToday,
   getTotalContribution,
-  getAllCoordinatorInFaculty
+  getAllCoordinatorInFaculty,
+  totalCoordinators
 } = require("../../controller/manager.controller");
 const checkDefaultPassword = require("../../middleware/checkDefaultPassword");
 const isLocked = require("../../middleware/isLocked");
@@ -95,6 +96,14 @@ manager.get(
   isLocked,
   checkDefaultPassword,
   getAllCoordinatorInFaculty
+)
+
+manager.get(
+  "/totalCoordinators",
+  authMiddleware([Role.MANAGER]),
+  isLocked,
+  checkDefaultPassword,
+  totalCoordinators
 )
 
 

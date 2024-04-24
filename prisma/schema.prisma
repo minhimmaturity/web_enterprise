@@ -41,7 +41,7 @@ model Admin {
 
 model Faculty {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique()
   createBy  String
   createAt  DateTime @default(now())
   updatedAt DateTime @updatedAt
