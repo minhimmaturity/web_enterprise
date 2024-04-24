@@ -545,7 +545,9 @@ const downloadContribution = async (req, res) => {
     const defaultFileName = `output.zip`;
 
     // Write zip to a temporary file
-    const tempFilePath = path.join(__dirname, defaultFileName);
+    const tempFilePath = path.join(os.homedir(), defaultFileName);
+
+    console.log(os.homedir());
     zip.writeZip(tempFilePath);
 
     // Stream the file to the response
