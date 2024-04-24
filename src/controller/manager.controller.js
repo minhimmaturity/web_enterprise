@@ -261,52 +261,47 @@ const CountContributionsStats = async (req, res) => {
   try {
     const faculties = await prisma.faculty.findMany();
 
-    const contributionsStats = {
-      totalContributions: faculties.length,
-      contributionsByFaculty: {},
+    const response = {
+      totalContributions: 0,
+      contributionsByFaculty: [],
     };
 
-    await Promise.all(
-      faculties.map(async (faculty) => {
-        const facultyId = faculty.id;
-        const students = await prisma.user.findMany({
+    for (const faculty of faculties) {
+      const students = await prisma.user.findMany({
+        where: {
+          FacultyId: faculty.id,
+          role: Role.STUDENT,
+        },
+      });
+
+      const studentIds = students.map((student) => student.id);
+      let contributionsInFaculty = 0;
+
+      for (const studentId of studentIds) {
+        const contributions = await prisma.contribution.findMany({
           where: {
-            FacultyId: facultyId,
-            role: Role.STUDENT,
+            userId: studentId,
           },
         });
+        contributionsInFaculty += contributions.length;
+        response.totalContributions += contributions.length;
+      }
 
-        const studentIds = students.map((student) => student.id);
+      const contributionEachFaculty = {
+        facultyName: faculty.name,
+        contributionInFaculty: contributionsInFaculty,
+      };
 
-        // Fetch contributions for all students in parallel
-        const contributionsPromises = studentIds.map(async (studentId) => {
-          const contributions = await prisma.contribution.findMany({
-            where: {
-              userId: studentId,
-            },
-          });
+      response.contributionsByFaculty.push(contributionEachFaculty);
+    }
 
-          return contributions.length;
-        });
-
-        const totalContributionsInFaculty = (
-          await Promise.all(contributionsPromises)
-        ).reduce((acc, count) => acc + count, 0);
-
-        contributionsStats.totalContributions += totalContributionsInFaculty;
-        contributionsStats.contributionsByFaculty[faculty.name] = {
-          totalContributions: totalContributionsInFaculty,
-          facultyId: facultyId,
-        };
-      })
-    );
-
-    res.json(contributionsStats);
+    res.json(response);
   } catch (error) {
     console.error("Error fetching contributions:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 const viewExceptionReport = async (req, res) => {
   try {
