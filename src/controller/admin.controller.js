@@ -106,13 +106,13 @@ const createAcademicYear = async (req, res) => {
       adminId: admin.id, // Associate the academic year with the admin
     };
 
-    await prisma.academicYear.create({
+    const academicYears = await prisma.academicYear.create({
       data: academicYear,
     });
 
     res.status(StatusCodes.OK).json({
       message: "Academic year created successfully",
-      academicYear,
+      academicYear: academicYears,
     });
   } catch (error) {
     console.error(error);
