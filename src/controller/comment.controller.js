@@ -20,7 +20,7 @@ const createComment = async (req, res) => {
     const comment = await prisma.comment.create({
       data: { content, userId: currentUser.id, contributionId },
     });
-    res.status(StatusCodes.CREATED).json(comment);
+    res.status(StatusCodes.CREATED).json({message: "Comment created",comment: comment});
   } catch (error) {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
   } finally {
