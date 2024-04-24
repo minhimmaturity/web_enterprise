@@ -130,8 +130,6 @@ const editUserProfile = async (req, res) => {
   }
 };
 
-
-
 const sentOtp = async (req, res) => {
   const { email } = req.body;
 
@@ -338,8 +336,7 @@ const processDocuments = async (contributionId, files, existingDocuments) => {
 
   for (const file of files) {
     if (
-      file.mimetype.includes("application") &&
-      file.mimetype !== "application/octet-stream"
+      file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
       const existingDocument = existingDocuments.find(
         (doc) => doc.name === file.originalname
@@ -493,8 +490,6 @@ const editMyContributions = async (req, res) => {
     });
 
     const files = req.files["files"];
-
-    console.log(files);
 
     const documentUploadPromises = await processDocuments(
       contributionId,
