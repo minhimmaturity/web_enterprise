@@ -5,7 +5,7 @@ const storage = require("../utils/firebase");
 const multerStorage = multer.memoryStorage();
 
 const upload = multer({
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req, res, file, cb) => {
     // Check if the file is a docx file or an image
     const allowedExtensions = [".docx", ".jpg", ".jpeg", ".png", ".gif"];
     const fileExtension =
@@ -15,7 +15,7 @@ const upload = multer({
       cb(null, true); // Accept the file
     } else {
       cb(
-        new Error("Only .docx, .jpg, .jpeg, .png, and .gif files are allowed"),
+        res.json("Only .docx, .jpg, .jpeg, .png, and .gif files are allowed"),
         false
       ); // Reject the file
     }
