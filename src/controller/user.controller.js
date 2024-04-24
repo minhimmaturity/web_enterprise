@@ -59,9 +59,6 @@ const editUserProfile = async (req, res) => {
   try {
     const existingUser = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
-      include: {
-        images: true, // Assuming you have a relation named 'images' in your User model
-      },
     });
 
     if (!existingUser) {
