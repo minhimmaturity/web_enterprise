@@ -10,7 +10,7 @@ const { downloadFile } = require("../utils/firebase");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const { promisify } = require('util');
+const { promisify } = require("util");
 
 const DOWNLOAD_DIR = os.tmpdir();
 
@@ -524,7 +524,11 @@ const downloadContribution = async (req, res) => {
     for (const contribution of contributions) {
       // Create a folder for each contribution
       const contributionFolderName = `${contribution.title}_${contribution.id}`;
-      zip.addLocalFolder(contributionFolderName);
+      const contributionFolderPath = path.join(
+        os.tmpdir(),
+        contributionFolderName
+      );
+      zip.addLocalFolder(contributionFolderPath);
 
       const images = await prisma.image.findMany({
         where: { contributionId: contribution.id },
@@ -543,7 +547,10 @@ const downloadContribution = async (req, res) => {
 
       // Add documents to contribution folder
       for (let i = 0; i < documents.length; i++) {
-        const documentFilePath = path.join(contributionFolderName, documents[i].name);
+        const documentFilePath = path.join(
+          contributionFolderName,
+          documents[i].name
+        );
         const documentData = await downloadFile(documents[i].path);
         zip.addFile(documentFilePath, documentData);
       }
@@ -558,22 +565,21 @@ const downloadContribution = async (req, res) => {
 
     // Stream the file to the response
     const fileStream = fs.createReadStream(tempFilePath);
-    fileStream.on('end', () => {
+    fileStream.on("end", () => {
       // Delete the temporary file after sending
       fs.unlinkSync(tempFilePath);
     });
 
     // Set appropriate headers and send the file
     res.set({
-      'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="${defaultFileName}"`,
+      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="${defaultFileName}"`,
     });
 
     fileStream.pipe(res);
-
   } catch (error) {
     console.error(error);
-    if (error.code === 'ENOENT') {
+    if (error.code === "ENOENT") {
       res.status(StatusCodes.NOT_FOUND).json({
         message: "File not found",
       });
@@ -584,10 +590,6 @@ const downloadContribution = async (req, res) => {
     }
   }
 };
-
-
-
-
 
 const viewAllNewContributionsToday = async (req, res) => {
   try {
