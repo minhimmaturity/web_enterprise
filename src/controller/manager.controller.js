@@ -440,11 +440,15 @@ const downloadContribution = async (req, res) => {
       .join("-");
 
     const outputFileName = `${formattedDate}_output.zip`;
-    const outputFilePath = path.join(os.tmpdir(), outputFileName); // Store temporarily in the system's temporary directory
-    fs.writeFileSync(outputFilePath, zip.toBuffer());
+
+    // Set download path to user's "Downloads" folder
+    const downloadPath = path.join(os.homedir(), 'Downloads', outputFileName);
+
+    // Write the zip buffer to file
+    fs.writeFileSync(downloadPath, zip.toBuffer());
 
     // Send the file for download
-    res.download(outputFilePath, outputFileName, (err) => {
+    res.download(downloadPath, outputFileName, (err) => {
       if (err) {
         console.error(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -452,7 +456,12 @@ const downloadContribution = async (req, res) => {
         });
       } else {
         // Optionally, you can delete the temporary file after it has been sent
-        fs.unlinkSync(outputFilePath);
+        fs.unlinkSync(downloadPath);
+
+        // Return success message
+        res.status(StatusCodes.OK).json({
+          message: "Download successfully",
+        });
       }
     });
   } catch (error) {
@@ -468,6 +477,7 @@ const downloadContribution = async (req, res) => {
     }
   }
 };
+
 
 
 
