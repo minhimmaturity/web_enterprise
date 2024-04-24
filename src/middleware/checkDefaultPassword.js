@@ -23,7 +23,7 @@ const checkDefaultPassword = async (req, res, next) => {
   
   if (user.password === user.default_pasword && user.role != Role.ADMIN) {
     return res.status(StatusCodes.BAD_REQUEST).json({
-      message: "Please change your password",
+      message: "Please change your password  by link in your mail",
     });
   }
 
