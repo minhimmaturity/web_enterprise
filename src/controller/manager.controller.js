@@ -1,4 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, Role } = require("@prisma/client");
 const { StatusCodes } = require("http-status-codes");
 const prisma = new PrismaClient();
 const {
@@ -9,6 +9,7 @@ const admZip = require("adm-zip");
 const { downloadFile } = require("../utils/firebase");
 const fs = require("fs");
 const path = require("path");
+const { log } = require("handlebars/runtime");
 
 const getContributionsStatsByFacultyAndYear = async (req, res) => {
   try {
@@ -246,35 +247,43 @@ const getChosenContributions = async (req, res) => {
 
 const CountContributionsStats = async (req, res) => {
   try {
-    const contributions = await prisma.contribution.findMany({
-      select: {
-        id: true,
-        AcademicYear: true,
-        user: {
-          select: {
-            Faculty: true,
-          },
-        },
-      },
-    });
+    const faculties = await prisma.faculty.findMany();
 
     const contributionsStats = {
-      totalContributions: contributions.length,
+      totalContributions: 0,
       contributionsByFaculty: {},
     };
 
-    contributions.forEach((contribution) => {
-      const faculty = contribution.user?.Faculty;
-      if (faculty && faculty.name) {
-        const facultyName = faculty.name;
-        const academicYearId = contribution.AcademicYear.id;
-        if (!contributionsStats.contributionsByFaculty[facultyName]) {
-          contributionsStats.contributionsByFaculty[facultyName] = 1;
-        } else {
-          contributionsStats.contributionsByFaculty[facultyName]++;
-        }
-      }
-    });
+    await Promise.all(faculties.map(async (faculty) => {
+      const facultyId = faculty.id;
+      const students = await prisma.user.findMany({
+        where: {
+          FacultyId: facultyId,
+          role: Role.STUDENT,
+        },
+      });
+
+      const studentIds = students.map((student) => student.id);
+
+      // Fetch contributions for all students in parallel
+      const contributionsPromises = studentIds.map(async (studentId) => {
+        const contributions = await prisma.contribution.findMany({
+          where: {
+            userId: studentId,
+          },
+        });
+
+        return contributions.length;
+      });
+
+      const totalContributionsInFaculty = (await Promise.all(contributionsPromises)).reduce((acc, count) => acc + count, 0);
+
+      contributionsStats.totalContributions += totalContributionsInFaculty;
+      contributionsStats.contributionsByFaculty[faculty.name] = {
+        totalContributions: totalContributionsInFaculty,
+        facultyId: facultyId,
+      };
+    }));
 
     res.json(contributionsStats);
   } catch (error) {
@@ -282,6 +291,8 @@ const CountContributionsStats = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
 
 const viewExceptionReport = async (req, res) => {
   try {
