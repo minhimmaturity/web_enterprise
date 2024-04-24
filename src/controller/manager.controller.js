@@ -250,7 +250,7 @@ const CountContributionsStats = async (req, res) => {
     const faculties = await prisma.faculty.findMany();
 
     const contributionsStats = {
-      totalContributions: 0,
+      totalContributions: faculties.length,
       contributionsByFaculty: {},
     };
 
@@ -442,6 +442,94 @@ const downloadContribution = async (req, res) => {
   }
 };
 
+const viewAllNewContributionsToday = async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const academicYear = await prisma.academicYear.findFirst({
+      where: {
+        final_closure_date: {
+          gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
+        },
+      },
+    });
+    const user = await prisma.user.findUnique({
+      where: { email: req.decodedPayload.data.email },
+    });
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const contributions = await prisma.contribution.findMany({
+      where: {
+        is_choosen: true,
+        AcademicYearId: academicYear.id,
+        createdAt: {
+          gte: todayStart,
+          lt: todayEnd,
+        },
+      },
+    });
+    res.status(StatusCodes.OK).json({
+      newContributions: contributions.length,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(StatusCodes.BAD_GATEWAY).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const getTotalContribution = async (req, res) => {
+  try {
+    const contributions = await prisma.contribution.findMany();
+    res.status(StatusCodes.OK).json({
+      totalContributions: contributions.length,
+    });
+  } catch(err) {
+    console.error(err);
+    res.status(StatusCodes.BAD_GATEWAY).json({
+      message: "Internal Server Error",
+    });
+  }
+}
+
+const getAllCoordinatorInFaculty = async (req, res) => {
+  try {
+    const faculties = await prisma.faculty.findMany();
+    const totalResponse = await Promise.all(faculties.map(async (faculty) => {
+      const coordinators = await prisma.user.findMany({
+        where: {
+          FacultyId: faculty.id,
+          role: Role.COORDIONATOR, // Typo? Should it be 'COORDINATOR'?
+        },
+      });
+      return {
+        faculty: faculty.name,
+        coordinators: coordinators.length,
+      };
+    }));
+    
+    res.status(StatusCodes.OK).json({
+      totalResponse: totalResponse,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(StatusCodes.BAD_GATEWAY).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+
+
+
 module.exports = {
   getContributionsStatsByFacultyAndYear,
   getContributionPercentageByFaculty,
@@ -450,4 +538,7 @@ module.exports = {
   viewExceptionReport,
   downloadContribution,
   CountContributionsStats,
+  viewAllNewContributionsToday,
+  getTotalContribution,
+  getAllCoordinatorInFaculty
 };

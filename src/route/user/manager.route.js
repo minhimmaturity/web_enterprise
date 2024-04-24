@@ -8,6 +8,9 @@ const {
   CountContributionsStats, viewExceptionReport, downloadContribution,
   publishContribution,
   getChosenContributions,
+  viewAllNewContributionsToday,
+  getTotalContribution,
+  getAllCoordinatorInFaculty
 } = require("../../controller/manager.controller");
 const checkDefaultPassword = require("../../middleware/checkDefaultPassword");
 const isLocked = require("../../middleware/isLocked");
@@ -69,5 +72,30 @@ manager.get(
   checkDefaultPassword,
   downloadContribution
 );
+
+manager.get(
+  "/viewAllNewContributionsToday",
+  authMiddleware([Role.MANAGER]),
+  isLocked,
+  checkDefaultPassword,
+  viewAllNewContributionsToday
+)
+
+manager.get(
+  "/getTotalContribution",
+  authMiddleware([Role.MANAGER]),
+  isLocked,
+  checkDefaultPassword,
+  getTotalContribution
+)
+
+manager.get(
+  "/getAllCoordinatorInFaculty",
+  authMiddleware([Role.MANAGER]),
+  isLocked,
+  checkDefaultPassword,
+  getAllCoordinatorInFaculty
+)
+
 
 module.exports = manager;
