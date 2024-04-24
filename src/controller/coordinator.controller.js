@@ -53,7 +53,7 @@ const viewContribution = async (req, res) => {
       skip: offset,
     };
 
-    if (title) { // Check if title parameter is provided
+    if (title) { 
       queryOptions.where = {
         ...queryOptions.where,
         title: {
