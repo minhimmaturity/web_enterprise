@@ -47,6 +47,7 @@
     "nodemailer": "^6.9.12",
     "nodemailer-express-handlebars": "^6.1.2",
     "nodemon": "^3.0.3",
+    "os": "^0.1.2",
     "otp": "^1.1.2",
     "otp-generator": "^4.0.1",
     "prisma": "^5.8.1",

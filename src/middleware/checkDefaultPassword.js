@@ -14,7 +14,11 @@ const checkDefaultPassword = async (req, res, next) => {
     user = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
     });
-  
+    if(!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
   }
   
   if (user.password === user.default_pasword && user.role != Role.ADMIN) {

@@ -9,7 +9,9 @@ const admZip = require("adm-zip");
 const { downloadFile } = require("../utils/firebase");
 const fs = require("fs");
 const path = require("path");
-const { log } = require("handlebars/runtime");
+const os = require("os");
+
+const DOWNLOAD_DIR = os.tmpdir();
 
 const getContributionsStatsByFacultyAndYear = async (req, res) => {
   try {
@@ -263,36 +265,40 @@ const CountContributionsStats = async (req, res) => {
       contributionsByFaculty: {},
     };
 
-    await Promise.all(faculties.map(async (faculty) => {
-      const facultyId = faculty.id;
-      const students = await prisma.user.findMany({
-        where: {
-          FacultyId: facultyId,
-          role: Role.STUDENT,
-        },
-      });
-
-      const studentIds = students.map((student) => student.id);
-
-      // Fetch contributions for all students in parallel
-      const contributionsPromises = studentIds.map(async (studentId) => {
-        const contributions = await prisma.contribution.findMany({
+    await Promise.all(
+      faculties.map(async (faculty) => {
+        const facultyId = faculty.id;
+        const students = await prisma.user.findMany({
           where: {
-            userId: studentId,
+            FacultyId: facultyId,
+            role: Role.STUDENT,
           },
         });
 
-        return contributions.length;
-      });
+        const studentIds = students.map((student) => student.id);
 
-      const totalContributionsInFaculty = (await Promise.all(contributionsPromises)).reduce((acc, count) => acc + count, 0);
+        // Fetch contributions for all students in parallel
+        const contributionsPromises = studentIds.map(async (studentId) => {
+          const contributions = await prisma.contribution.findMany({
+            where: {
+              userId: studentId,
+            },
+          });
 
-      contributionsStats.totalContributions += totalContributionsInFaculty;
-      contributionsStats.contributionsByFaculty[faculty.name] = {
-        totalContributions: totalContributionsInFaculty,
-        facultyId: facultyId,
-      };
-    }));
+          return contributions.length;
+        });
+
+        const totalContributionsInFaculty = (
+          await Promise.all(contributionsPromises)
+        ).reduce((acc, count) => acc + count, 0);
+
+        contributionsStats.totalContributions += totalContributionsInFaculty;
+        contributionsStats.contributionsByFaculty[faculty.name] = {
+          totalContributions: totalContributionsInFaculty,
+          facultyId: facultyId,
+        };
+      })
+    );
 
     res.json(contributionsStats);
   } catch (error) {
@@ -300,8 +306,6 @@ const CountContributionsStats = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
 
 const viewExceptionReport = async (req, res) => {
   try {
@@ -366,6 +370,7 @@ const downloadContribution = async (req, res) => {
     const zip = new admZip();
     const currentYear = new Date().getFullYear();
 
+    // Fetch academic year
     const academicYear = await prisma.academicYear.findFirst({
       where: {
         final_closure_date: {
@@ -374,16 +379,19 @@ const downloadContribution = async (req, res) => {
       },
     });
 
+    // Fetch user
     const user = await prisma.user.findUnique({
       where: { email: req.decodedPayload.data.email },
     });
 
+    // Return error if user not found
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "User not found",
       });
     }
 
+    // Fetch contributions
     const contributions = await prisma.contribution.findMany({
       where: {
         is_choosen: true,
@@ -391,12 +399,14 @@ const downloadContribution = async (req, res) => {
       },
     });
 
-    if (contributions.length == 0) {
+    // Return error if no contributions found
+    if (contributions.length === 0) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: "Empty list",
       });
     }
 
+    // Add files to zip
     for (const contribution of contributions) {
       const images = await prisma.image.findMany({
         where: { contributionId: contribution.id },
@@ -417,12 +427,7 @@ const downloadContribution = async (req, res) => {
       }
     }
 
-    //download storage
-    var DOWNLOAD_DIR = path.join(
-      process.env.HOME || process.env.USERPROFILE,
-      "downloads/"
-    );
-    //day
+    // Create output file path and write the zip buffer to file
     const currentDate = new Date();
     const formattedDate = currentDate
       .toLocaleTimeString("en-GB", {
@@ -433,23 +438,32 @@ const downloadContribution = async (req, res) => {
       })
       .split(":")
       .join("-");
-    //
-    const outputPath = path.join(DOWNLOAD_DIR + `${formattedDate}_output.zip`);
-    fs.writeFileSync(outputPath, zip.toBuffer());
-    res.download(outputPath);
 
-    res.status(StatusCodes.OK).json({
-      message: "Download succeefully",
+    const outputFileName = `${formattedDate}_output.zip`;
+    const outputFilePath = path.join(os.homedir(), "/Downloads", outputFileName);
+    fs.writeFileSync(outputFilePath, zip.toBuffer());
+
+    // Send the file for download
+    res.download(outputFilePath)
+
+    // Return success message
+    return res.status(StatusCodes.OK).json({
+      message: "Download successfully",
     });
   } catch (error) {
     console.error(error);
-    if (!response.ok) {
-      res.status(StatusCodes.BAD_GATEWAY).json({
+    if (error.code === 'ENOENT') {
+      res.status(StatusCodes.NOT_FOUND).json({
+        message: "File not found",
+      });
+    } else {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: "Internal Server Error",
       });
     }
   }
 };
+
 
 const viewAllNewContributionsToday = async (req, res) => {
   try {
@@ -501,30 +515,32 @@ const getTotalContribution = async (req, res) => {
     res.status(StatusCodes.OK).json({
       totalContributions: contributions.length,
     });
-  } catch(err) {
+  } catch (err) {
     console.error(err);
     res.status(StatusCodes.BAD_GATEWAY).json({
       message: "Internal Server Error",
     });
   }
-}
+};
 
 const getAllCoordinatorInFaculty = async (req, res) => {
   try {
     const faculties = await prisma.faculty.findMany();
-    const totalResponse = await Promise.all(faculties.map(async (faculty) => {
-      const coordinators = await prisma.user.findMany({
-        where: {
-          FacultyId: faculty.id,
-          role: Role.COORDIONATOR, // Typo? Should it be 'COORDINATOR'?
-        },
-      });
-      return {
-        faculty: faculty.name,
-        coordinators: coordinators.length,
-      };
-    }));
-    
+    const totalResponse = await Promise.all(
+      faculties.map(async (faculty) => {
+        const coordinators = await prisma.user.findMany({
+          where: {
+            FacultyId: faculty.id,
+            role: Role.COORDIONATOR, // Typo? Should it be 'COORDINATOR'?
+          },
+        });
+        return {
+          faculty: faculty.name,
+          coordinators: coordinators.length,
+        };
+      })
+    );
+
     res.status(StatusCodes.OK).json({
       totalResponse: totalResponse,
     });
@@ -552,10 +568,7 @@ const totalCoordinators = async (req, res) => {
       message: "Internal Server Error",
     });
   }
-}
-
-
-
+};
 
 module.exports = {
   getContributionsStatsByFacultyAndYear,
@@ -568,5 +581,5 @@ module.exports = {
   viewAllNewContributionsToday,
   getTotalContribution,
   getAllCoordinatorInFaculty,
-  totalCoordinators
+  totalCoordinators,
 };
