@@ -365,6 +365,119 @@ const viewExceptionReport = async (req, res) => {
     });
   }
 };
+// const downloadContribution = async (req, res) => {
+//   try {
+//     const zip = new admZip();
+//     const currentYear = new Date().getFullYear();
+
+//     // Fetch academic year
+//     const academicYear = await prisma.academicYear.findFirst({
+//       where: {
+//         final_closure_date: {
+//           gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
+//         },
+//       },
+//     });
+
+//     // Fetch user
+//     const user = await prisma.user.findUnique({
+//       where: { email: req.decodedPayload.data.email },
+//     });
+
+//     // Return error if user not found
+//     if (!user) {
+//       return res.status(StatusCodes.NOT_FOUND).json({
+//         message: "User not found",
+//       });
+//     }
+
+//     // Fetch contributions
+//     const contributions = await prisma.contribution.findMany({
+//       where: {
+//         is_choosen: true,
+//         AcademicYearId: academicYear.id,
+//       },
+//     });
+
+//     // Return error if no contributions found
+//     if (contributions.length === 0) {
+//       return res.status(StatusCodes.NOT_FOUND).json({
+//         message: "Empty list",
+//       });
+//     }
+
+//     // Add files to zip
+//     for (const contribution of contributions) {
+//       const images = await prisma.image.findMany({
+//         where: { contributionId: contribution.id },
+//       });
+//       const documents = await prisma.documents.findMany({
+//         where: { contributionId: contribution.id },
+//       });
+//       for (let i = 0; i < documents.length; i++) {
+//         const fileData = await downloadFile(documents[i].path);
+//         const uniqueFileName = `${contribution.title}_${documents[i].name}`;
+//         zip.addFile(uniqueFileName, fileData);
+//       }
+
+//       for (let i = 0; i < images.length; i++) {
+//         const fileData = await downloadFile(images[i].path);
+//         const uniqueFileName = `${contribution.title}_${images[i].name}`;
+//         zip.addFile(uniqueFileName, fileData);
+//       }
+//     }
+
+//     // Create output file path and write the zip buffer to file
+//     const currentDate = new Date();
+//     const formattedDate = currentDate
+//       .toLocaleTimeString("en-GB", {
+//         hour: "2-digit",
+//         minute: "2-digit",
+//         second: "2-digit",
+//         hour12: false,
+//       })
+//       .split(":")
+//       .join("-");
+
+//     const outputFileName = `${formattedDate}_output.zip`;
+
+//     // Set download path to user's "Downloads" folder
+//     const downloadPath = path.join(os.homedir(), 'Downloads', outputFileName);
+
+//     // Write the zip buffer to file
+//     fs.writeFileSync(downloadPath, zip.toBuffer());
+
+//     // Send the file for download
+//     res.download(downloadPath, outputFileName, (err) => {
+//       if (err) {
+//         console.error(err);
+//         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+//           message: "Download failed",
+//         });
+//       } else {
+//         // Optionally, you can delete the temporary file after it has been sent
+//         fs.unlinkSync(downloadPath);
+
+//         // Return success message
+//         res.status(StatusCodes.OK).json({
+//           message: "Download successfully",
+//         });
+//       }
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     if (error.code === 'ENOENT') {
+//       res.status(StatusCodes.NOT_FOUND).json({
+//         message: "File not found",
+//       });
+//     } else {
+//       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+//         message: "Internal Server Error",
+//       });
+//     }
+//   }
+// };
+
 const downloadContribution = async (req, res) => {
   try {
     const zip = new admZip();
@@ -427,43 +540,17 @@ const downloadContribution = async (req, res) => {
       }
     }
 
-    // Create output file path and write the zip buffer to file
-    const currentDate = new Date();
-    const formattedDate = currentDate
-      .toLocaleTimeString("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      })
-      .split(":")
-      .join("-");
+    // Set default file name for download
+    const defaultFileName = `output.zip`;
 
-    const outputFileName = `${formattedDate}_output.zip`;
-
-    // Set download path to user's "Downloads" folder
-    const downloadPath = path.join(os.homedir(), 'Downloads', outputFileName);
-
-    // Write the zip buffer to file
-    fs.writeFileSync(downloadPath, zip.toBuffer());
-
-    // Send the file for download
-    res.download(downloadPath, outputFileName, (err) => {
-      if (err) {
-        console.error(err);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-          message: "Download failed",
-        });
-      } else {
-        // Optionally, you can delete the temporary file after it has been sent
-        fs.unlinkSync(downloadPath);
-
-        // Return success message
-        res.status(StatusCodes.OK).json({
-          message: "Download successfully",
-        });
-      }
+    // Send the file for download with appropriate headers
+    res.set({
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${defaultFileName}"`,
     });
+
+    res.send(zip.toBuffer());
+
   } catch (error) {
     console.error(error);
     if (error.code === 'ENOENT') {
@@ -477,7 +564,6 @@ const downloadContribution = async (req, res) => {
     }
   }
 };
-
 
 
 
