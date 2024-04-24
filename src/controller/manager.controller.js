@@ -441,6 +441,7 @@ const downloadContribution = async (req, res) => {
 
     const outputFileName = `${formattedDate}_output.zip`;
     const outputFilePath = path.join(os.homedir(), "/Downloads", outputFileName);
+    console.log(outputFilePath);
     fs.writeFileSync(outputFilePath, zip.toBuffer());
 
     // Send the file for download
