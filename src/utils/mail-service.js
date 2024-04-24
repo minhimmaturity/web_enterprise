@@ -156,7 +156,7 @@ const sendMailResetPassword = async (email) => {
     specialChars: false,
   });
 
-  await redisClient.setEx("otp" + " " + email, 60, token);
+  await redisClient.setEx("otp" + " " + email, 300, token);
   // Resolve the path to the template file
   const templatePath = path.resolve(__dirname, "../../mail/otp.hbs");
 
