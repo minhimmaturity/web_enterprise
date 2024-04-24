@@ -88,7 +88,7 @@ const getPublicContributionsInFaculty = async (req, res) => {
     const limit = 10;
     let offset = 0;
     let allPublicContributions = [];
-    const { sort } = req.query;
+    const { sort, title } = req.query;
     const usersInFaculty = await prisma.user.findMany({
       where: {
         FacultyId: facultyId,
@@ -97,7 +97,6 @@ const getPublicContributionsInFaculty = async (req, res) => {
 
     const userIdsInFaculty = usersInFaculty.map(user => user.id);
 
- 
     const queryOptions = {
       where: {
         is_public: true,
@@ -117,8 +116,18 @@ const getPublicContributionsInFaculty = async (req, res) => {
         Image: true
       },
       take: limit,
-      orderBy: { createdAt: sort === 'asc' ? 'asc' : 'desc' }
+      orderBy: { createdAt: sort === 'asc' ? 'asc' : 'desc' },
     };
+
+    if (title) {
+      queryOptions.where = {
+        ...queryOptions.where,
+        title: {
+          contains: title,
+          mode: "insensitive", // support case-insensitive filtering
+        },
+      };
+    }
 
     while (true) {
       const contributions = await prisma.contribution.findMany({
@@ -140,6 +149,7 @@ const getPublicContributionsInFaculty = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 

@@ -591,7 +591,7 @@ const viewMyContributions = async (req, res) => {
         message: "User not found",
       });
     }
-    const { sort } = req.query;
+    const { sort, title } = req.query;
     const limit = 10;
     let offset = 0;
     let allMyContributions = [];
@@ -615,7 +615,15 @@ const viewMyContributions = async (req, res) => {
       take: limit,
       skip: offset,
     };
-
+    if (title) { 
+      queryOptions.where = {
+        ...queryOptions.where,
+        title: {
+          contains: title,
+          mode: "insensitive", // support case-insensitive filtering
+        },
+      };
+    }
     if (sort) {
       queryOptions.orderBy = {
         createdAt: sort === "asc" ? "asc" : "desc",
