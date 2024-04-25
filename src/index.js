@@ -30,8 +30,9 @@ const {
   validateUserInConversation,
   getMessagesInConversation,
   editMessage,
-  getAllConversationByUserId,
+  getAllConversationsWithLatestMessage,
   findExistConversation,
+  // returnConversationAndLastestMessage
 } = require("./controller/chat.controller");
 const { authenticateSocket } = require("./middleware/checkRole");
 
@@ -273,7 +274,8 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("get-conversation", async() => {
-    const conversation = await getAllConversationByUserId(user.email);
+    const conversation = await getAllConversationsWithLatestMessage(user.email)
+    console.log(user.email);
 
     await socket.emitWithAck("get-conversation-response", conversation)
   })

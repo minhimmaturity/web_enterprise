@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const prisma = new PrismaClient();
 const { StatusCodes } = require("http-status-codes");
 const user = require("../route/user/user.route");
+const { HttpStatusCode } = require("axios");
 
 const createConversation = async (userEmail, req, res) => {
   try {
@@ -154,40 +155,71 @@ const editMessage = async (messageId, text) => {
   }
 };
 
-const getAllConversationByUserId = async (userEmail, req, res) => {
+const getAllConversationsWithLatestMessage = async (userEmail, req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { email: userEmail } });
-    const conversations = await prisma.conversation.findMany({
+
+    // Get all conversations for the user
+    const userConversations = await prisma.userOnConservation.findMany({
       where: { userId: user.id },
     });
 
-    const response = await Promise.all(conversations.map(async (conversation) => {
+    // Prepare array to store conversation details with latest message
+    const conversationsWithLatestMessage = [];
+
+    // Loop through each conversation
+    for (const userConversation of userConversations) {
+      // Get conversation details
+      const conversation = await prisma.conversation.findUnique({
+        where: { id: userConversation.conversationId },
+      });
+
+      // Get latest message for the conversation
       const latestMessage = await prisma.message.findFirst({
         where: { conversationId: conversation.id },
         orderBy: { createdAt: "desc" }
       });
 
-      const anotherPeople = await prisma.userOnConservation.findFirst({
+      // Get the other user in the conversation
+      const otherUserInConversation = await prisma.userOnConservation.findFirst({
         where: { conversationId: conversation.id, NOT: { userId: user.id } }
       });
 
       const userInChat = await prisma.user.findFirst({
-        where: { id: anotherPeople.userId }
+        where: { id: otherUserInConversation.userId }
       });
 
-      return {
-        statusCode: StatusCodes.OK,
-        conversation: conversation.id,
+      // Prepare conversation details with latest message
+      const conversationWithLatestMessage = {
+        conversationId: conversation.id,
         name: userInChat.name,
         latestMessage: latestMessage,
       };
-    }));
 
-    return response;
+      // Push conversation details into the array
+      conversationsWithLatestMessage.push(conversationWithLatestMessage);
+    }
+
+    // Return the response with all conversations and their latest messages
+    return {
+      statusCode: 200,
+      body: {
+        message: "All conversations with latest message retrieved successfully",
+        conversations: conversationsWithLatestMessage
+      }
+    };
   } catch (error) {
     console.log(error.message);
+    // Handle errors appropriately
+    return {
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      body: {
+        message: error.message
+      }
+    };
   }
 };
+
 
 
 const findExistConversation = async (users) => {
@@ -229,6 +261,6 @@ module.exports = {
   validateUserInConversation,
   getMessagesInConversation,
   editMessage,
-  getAllConversationByUserId,
   findExistConversation,
+  getAllConversationsWithLatestMessage
 };
