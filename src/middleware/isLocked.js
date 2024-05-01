@@ -13,12 +13,12 @@ const isLocked = async (req, res, next) => {
       user = await prisma.user.findUnique({
         where: { email: req.decodedPayload.data.email },
       });
+    }
 
-      if(!user) {
-        return res.status(StatusCodes.NOT_FOUND).json({
-          message: "User not found",
-        });
-      }
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "User not found",
+      });
     }
 
     if (user.is_locked) {
@@ -31,5 +31,6 @@ const isLocked = async (req, res, next) => {
     return res.status(500).json({ error: "Failed to check if user is locked" });
   }
 };
+
 
 module.exports = isLocked;
