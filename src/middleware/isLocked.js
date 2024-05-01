@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const {StatusCodes} = require("http-status-codes")
 
 const isLocked = async (req, res, next) => {
   try {
@@ -12,7 +13,7 @@ const isLocked = async (req, res, next) => {
 
       if (!user) {
         return res.status(StatusCodes.NOT_FOUND).json({
-          error: "User not found in the database",
+          error: "User not found",
         });
       }
     } else {
@@ -22,7 +23,7 @@ const isLocked = async (req, res, next) => {
 
       if (!user) {
         return res.status(StatusCodes.NOT_FOUND).json({
-          error: "User not found in the database",
+          error: "User not found",
         });
       }
 
