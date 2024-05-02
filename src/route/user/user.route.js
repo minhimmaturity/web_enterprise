@@ -33,7 +33,7 @@ user.put(
 );
 user.put("/changePassword", isLocked, changePassword);
 user.post("/otp", isLocked, sentOtp);
-user.put("/resetPassword", isLocked, resetPassword);
+user.put("/resetPassword", isLocked, validate.validateResetPassword(), resetPassword);
 
 // Route for uploading submission with middleware
 user.post(

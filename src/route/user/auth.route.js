@@ -30,7 +30,14 @@ auth.get("/public", (req, res) => {
 auth.get("/private1", authToken, (req, res) => {
   res.json(privatePosts);
 });
-auth.post("/register", validate.validateRegister(), register);
+auth.post("/register", validate.validateRegister(), (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  // Proceed with registration logic if validation passes
+  res.status(200).json({ message: "register user successfully" });
+});
 
 auth.post(
   "/login",
@@ -42,6 +49,6 @@ auth.post(
 
 auth.get("/refreshAccessToken", authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.GUEST, Role.ADMIN]), refreshToken)
 
-auth.put("/resetDefaultPassword/:email/:default_pasword", resetDefaultPassword);
+auth.put("/resetDefaultPassword/:email/:default_pasword", validate.validateResetPassword(), resetDefaultPassword);
 
 module.exports = auth;

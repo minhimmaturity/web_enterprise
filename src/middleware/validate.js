@@ -12,19 +12,23 @@ let validateRegister = () => {
       .notEmpty()
       .withMessage("Name is required")
       .isString()
-      .withMessage("Name must be string"),
+      .withMessage("Name must be a string"),
     check("password")
-      .isStrongPassword()
-      .withMessage("this is not a strong password")
-      .isLength(8, 24)
-      .withMessage(
-        "Password must have a minimum of 8 characters and a maximun of 24 characters"
-      )
+      .isStrongPassword({ 
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minSymbols: 1 
+      })
+      .withMessage("Password must contain at least one lowercase letter, one uppercase letter, and one special character")
+      .isLength({ min: 8, max: 24 })
+      .withMessage("Password must have a minimum of 8 characters and a maximum of 24 characters")
       .notEmpty()
       .withMessage("Password is required"),
-    check("avatar").notEmpty().withMessage("avatar is required"),
+    check("avatar").notEmpty().withMessage("Avatar is required"),
   ];
 };
+
 
 let validateLogin = () => {
   return [
@@ -146,6 +150,23 @@ let validateUpdateComment = () => {
       .withMessage("Name must be string"),
   ];
 };
+
+let validateResetPassword = () => {
+  return [
+    check("newPassword")
+      .isStrongPassword({ 
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minSymbols: 1 
+      })
+      .withMessage("Password must contain at least one lowercase letter, one uppercase letter, and one special character")
+      .isLength({ min: 8, max: 24 })
+      .withMessage("Password must have a minimum of 8 characters and a maximum of 24 characters")
+      .notEmpty()
+      .withMessage("Password is required"),
+  ]
+}
 let validate = {
   validateRegister: validateRegister,
   validateLogin: validateLogin,
@@ -156,7 +177,8 @@ let validate = {
   validateCreateFaculty: validateCreateFaculty,
   validateUpdateFaculty: validateUpdateFaculty,
   validateCreateComment: validateCreateComment,
-  validateUpdateComment: validateUpdateComment
+  validateUpdateComment: validateUpdateComment,
+  validateResetPassword: validateResetPassword
 };
 
 module.exports = validate;
