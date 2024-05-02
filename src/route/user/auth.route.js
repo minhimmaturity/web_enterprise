@@ -49,6 +49,13 @@ auth.post(
 
 auth.get("/refreshAccessToken", authMiddleware([Role.STUDENT, Role.COORDIONATOR, Role.MANAGER, Role.GUEST, Role.ADMIN]), refreshToken)
 
-auth.put("/resetDefaultPassword/:email/:default_pasword", validate.validateResetPassword(), resetDefaultPassword);
+auth.put("/resetDefaultPassword/:email/:default_pasword", validate.validateResetPassword(), (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  // Proceed with resetting default password logic if validation passes
+  resetDefaultPassword(req, res); // Call the resetDefaultPassword function to handle the logic
+});
 
 module.exports = auth;

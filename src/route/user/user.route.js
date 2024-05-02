@@ -33,7 +33,14 @@ user.put(
 );
 user.put("/changePassword", isLocked, changePassword);
 user.post("/otp", isLocked, sentOtp);
-user.put("/resetPassword", isLocked, validate.validateResetPassword(), resetPassword);
+user.put("/resetPassword", isLocked, validate.validateResetPassword(), (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  // Proceed with resetting default password logic if validation passes
+  resetPassword(req, res); // Call the resetDefaultPassword function to handle the logic
+});
 
 // Route for uploading submission with middleware
 user.post(
