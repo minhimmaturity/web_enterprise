@@ -20,7 +20,9 @@ const { uploadMiddleware } = require("../../middleware/upload"); // Import the m
 const validate = require("../../middleware/validate");
 const checkDefaultPassword = require("../../middleware/checkDefaultPassword");
 const isLocked = require("../../middleware/isLocked");
+const { validationResult } = require("express-validator");
 const user = Router();
+
 
 // Other routes...
 user.put(
