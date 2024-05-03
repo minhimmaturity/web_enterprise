@@ -26,7 +26,7 @@ admin.use(express.json());
 
 admin.post(
   "/registerForUser",
-  validate.validateRegister(), (req, res) => {
+  validate.validateRegisterForUser(), (req, res) => {
     const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });

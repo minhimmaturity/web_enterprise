@@ -167,7 +167,23 @@ let validateResetPassword = () => {
       .withMessage("Password is required"),
   ]
 }
-let validate = {
+
+let validateRegisterForUser = () => {
+  return [
+    check("email")
+      .isEmail()
+      .withMessage("Invalid email address")
+      .notEmpty()
+      .withMessage("Email is required")
+      .isString(),
+    check("name")
+      .notEmpty()
+      .withMessage("Name is required")
+      .isString()
+      .withMessage("Name must be a string"),
+  ];
+}
+ let validate = {
   validateRegister: validateRegister,
   validateLogin: validateLogin,
   validateCreateAccountForUser: validateCreateAccountForUser,
@@ -178,7 +194,8 @@ let validate = {
   validateUpdateFaculty: validateUpdateFaculty,
   validateCreateComment: validateCreateComment,
   validateUpdateComment: validateUpdateComment,
-  validateResetPassword: validateResetPassword
+  validateResetPassword: validateResetPassword,
+  validateRegisterForUser: validateRegisterForUser
 };
 
 module.exports = validate;
