@@ -26,8 +26,15 @@ admin.use(express.json());
 
 admin.post(
   "/registerForUser",
-  validate.validateRegister(),
-  createAccountForUser
+  validate.validateRegister(), (req, res) => {
+    const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  createAccountForUser(req, res)
+  }, 
+  
 );
 // ACADEMIC YEAR
 admin.post(
