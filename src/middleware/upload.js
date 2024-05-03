@@ -7,7 +7,7 @@ const multerStorage = multer.memoryStorage();
 const upload = multer({
   fileFilter: (req, file, cb) => {
     // Check if the file is a docx file or an image
-    const allowedExtensions = [".docx", ".jpg", ".jpeg", ".png", ".gif"];
+    const allowedExtensions = [".docx", ".jpg", ".jpeg", ".png", ".gif", ".jfif"];
     const fileExtension =
       "." + file.originalname.split(".").pop().toLowerCase();
 
