@@ -12,7 +12,7 @@ const { register, getAllFaculties,
 
 guest.post(
     "/register",
-    validate.validateRegister(),
+    validate.validateRegisterForUser(),
     (req, res) => {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
