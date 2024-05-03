@@ -13,7 +13,14 @@ const { register, getAllFaculties,
 guest.post(
     "/register",
     validate.validateRegister(),
-    register
+    (req, res) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      // Proceed with registration logic if validation passes
+      register(req, res)
+    }
   );
 
 // Route to get all faculties
