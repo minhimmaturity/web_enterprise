@@ -275,7 +275,6 @@ io.on("connection", async (socket) => {
 
   socket.on("get-conversation", async() => {
     const conversation = await getAllConversationsWithLatestMessage(user.email)
-    console.log(user.email);
 
     await socket.emitWithAck("get-conversation-response", conversation)
   })
